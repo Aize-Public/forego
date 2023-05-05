@@ -1,11 +1,13 @@
 package ast
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/Aize-Public/forego/ctx"
 	util "github.com/Aize-Public/forego/utils"
@@ -18,13 +20,30 @@ type Call struct {
 }
 
 type Arg struct {
-	//Expr       ast.Expr
-	Src        string
-	Assignment string
+	Src        string // the source code
+	Assignment string // if a simple var, the source code of the assignment
+}
+
+func (a Arg) Short() string {
+	s := a.Assignment
+	if a.Assignment == "" {
+		s = a.Src
+	}
+	return strings.Split(s, "\n")[0]
 }
 
 func (a Arg) String() string {
 	return a.Src
+}
+
+// Helper: returns the source code that assigned the first argument or the argument source code or some other messages
+func Assignment(above, arg int) string {
+	a, aerr := Caller(above)
+	if aerr != nil {
+		return fmt.Sprintf("<can't parse: %v>", aerr)
+	} else {
+		return a.Args[arg].Short()
+	}
 }
 
 // expand the source code of the caller (use above==0 for the current function)

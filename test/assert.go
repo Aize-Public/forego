@@ -1,12 +1,10 @@
 package test
 
 import (
-	"testing"
-
 	"github.com/Aize-Public/forego/utils/ast"
 )
 
-func Assert(t *testing.T, cond bool) {
+func Assert(t T, cond bool) {
 	t.Helper()
 	call, err := ast.Caller(0)
 	if err != nil {
@@ -14,7 +12,7 @@ func Assert(t *testing.T, cond bool) {
 		if cond {
 			t.Logf("ok")
 		} else {
-			t.Fatal("FAIL")
+			t.Fatalf("FAIL")
 		}
 		return
 	}
