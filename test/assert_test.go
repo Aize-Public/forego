@@ -7,7 +7,7 @@ import (
 )
 
 func testAssignment(t *testing.T, cond bool) {
-	a := ast.Assignment(1, 1)
+	a := ast.Assignment(0, 1)
 	t.Logf("assignment: %s", a)
 	ContainsJSON(t, a, "42")
 }

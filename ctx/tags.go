@@ -3,13 +3,12 @@ package ctx
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 )
 
 type tagC struct {
 	C
 	key  string
-	json []byte
+	json JSON
 }
 
 // Append the given key/val pair to the context
@@ -18,6 +17,8 @@ func WithTag(c C, key string, val any) C {
 	var j []byte
 	switch val := val.(type) {
 	case json.RawMessage:
+		j = val
+	case JSON:
 		j = val
 	case []byte:
 		if json.Valid(val) {
@@ -40,7 +41,7 @@ func WithTag(c C, key string, val any) C {
 }
 
 // scan the chain of context for tags, call the function on each of them, parents first
-func RangeTag(c C, fn func(k string, json []byte) error) error {
+func RangeTag(c C, fn func(k string, json JSON) error) error {
 	v := c.Value(tagRangeFunc(fn))
 	switch v := v.(type) {
 	case nil:
@@ -52,19 +53,19 @@ func RangeTag(c C, fn func(k string, json []byte) error) error {
 	}
 }
 
-type tagRangeFunc func(k string, json []byte) error
+type tagRangeFunc func(k string, json JSON) error
 
 func (c tagC) Value(k any) any {
 	switch k := k.(type) {
 	case tagRangeFunc:
-		log.Printf("tagC.Value... %p", k)
+		//log.Printf("tagC.Value... %p", k)
 		err := c.C.Value(k) // parents first
 		if err != nil {
 			return err
 		}
 		return k(c.key, c.json)
 	default:
-		log.Printf("tagC.Value(%T)...", k)
+		//log.Printf("tagC.Value(%T)...", k)
 		return c.C.Value(k)
 	}
 }

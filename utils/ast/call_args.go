@@ -38,7 +38,7 @@ func (a Arg) String() string {
 
 // Helper: returns the source code that assigned the first argument or the argument source code or some other messages
 func Assignment(above, arg int) string {
-	a, aerr := Caller(above)
+	a, aerr := Caller(above + 1)
 	if aerr != nil {
 		return fmt.Sprintf("<can't parse: %v>", aerr)
 	} else {

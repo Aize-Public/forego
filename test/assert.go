@@ -7,9 +7,10 @@ import (
 )
 
 func Assert(t *testing.T, cond bool) {
+	t.Helper()
 	if cond {
-		t.Logf("ok %s", ast.Assignment(1, 1))
+		t.Logf("ok %s", ast.Assignment(0, 1))
 	} else {
-		t.Fatalf("fail %s", ast.Assignment(1, 1))
+		t.Fatalf("fail %s", ast.Assignment(0, 1))
 	}
 }

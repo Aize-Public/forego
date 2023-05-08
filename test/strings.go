@@ -1,16 +1,29 @@
 package test
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
 
+// check if the json of obj contains pattern
 func ContainsJSON(t *testing.T, obj any, pattern string) {
 	t.Helper()
 	s := jsonish(obj)
+	contains(s, pattern).ok(t)
+}
+
+// check if the json of obj does NOT contains pattern
+func NotContainsJSON(t *testing.T, obj any, pattern string) {
+	t.Helper()
+	s := jsonish(obj)
+	contains(s, pattern).fail(t)
+}
+
+func contains(s string, pattern string) res {
 	if strings.Contains(s, pattern) {
-		t.Logf("contains %q: %q", pattern, obj)
+		return res{true, s}
 	} else {
-		t.Fatalf("FAIL: contains %q: %q", pattern, obj)
+		return res{false, fmt.Sprintf("%q not found in %q", pattern, s)}
 	}
 }

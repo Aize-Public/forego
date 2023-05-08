@@ -12,16 +12,16 @@ import (
 )
 
 type Line struct {
-	Level   string                     `json:"level"`
-	Src     string                     `json:"src"`
-	Time    time.Time                  `json:"time"`
-	Message string                     `json:"message"`
-	Tags    map[string]json.RawMessage `json:"tags"`
+	Level   string              `json:"level"`
+	Src     string              `json:"src"`
+	Time    time.Time           `json:"time"`
+	Message string              `json:"message"`
+	Tags    map[string]ctx.JSON `json:"tags"`
 }
 
-func tags(c ctx.C) map[string]json.RawMessage {
-	out := map[string]json.RawMessage{}
-	_ = ctx.RangeTag(c, func(k string, j []byte) error {
+func tags(c ctx.C) map[string]ctx.JSON {
+	out := map[string]ctx.JSON{}
+	_ = ctx.RangeTag(c, func(k string, j ctx.JSON) error {
 		out[k] = j
 		return nil
 	})
@@ -51,10 +51,10 @@ func Debugf(c ctx.C, f string, args ...any) {
 	logger(c)(Line{
 		Src:   utils.Caller(1).FileLine(),
 		Level: "debug",
-	}.Formatf(c, f, args...))
+	}.formatf(c, f, args...))
 }
 
-func (at Line) Formatf(c ctx.C, f string, args ...any) Line {
+func (at Line) formatf(c ctx.C, f string, args ...any) Line {
 	if at.Time.IsZero() {
 		at.Time = time.Now()
 	}

@@ -13,6 +13,10 @@ func testCall(c ctx.C, b any) (*ast.Call, error) {
 	return ast.Caller(0)
 }
 
+func testAssign(c ctx.C, b any) string {
+	return ast.Assignment(0, 1)
+}
+
 func TestArg(t *testing.T) {
 	c := ctx.TODO()
 	i := 2
@@ -23,12 +27,7 @@ func TestArg(t *testing.T) {
 
 	{
 		err := errors.New("my error")
-		call, err_ := testCall(c, err)
-		test.EqualsJSON(t, nil, err_)
-
-		test.EqualsJSON(t, "c", call.Args[0].Src)
-
-		test.EqualsJSON(t, "err", call.Args[1].Src)
-		test.EqualsJSON(t, `errors.New("my error")`, call.Args[1].Assignment)
+		src := testAssign(c, err)
+		test.EqualsJSON(t, `errors.New("my error")`, src)
 	}
 }

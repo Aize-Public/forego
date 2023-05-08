@@ -16,7 +16,7 @@ func TestTags(t *testing.T) {
 	fetch := func(c ctx.C) []any {
 		t.Helper()
 		var list []any
-		err := ctx.RangeTag(c, func(key string, j []byte) error {
+		err := ctx.RangeTag(c, func(key string, j ctx.JSON) error {
 			t.Logf("tag[%s] = %s", key, string(j))
 			var v any
 			err := json.Unmarshal(j, &v)
