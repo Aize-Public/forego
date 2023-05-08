@@ -9,8 +9,8 @@ func ContainsJSON(t *testing.T, obj any, pattern string) {
 	t.Helper()
 	s := jsonish(obj)
 	if strings.Contains(s, pattern) {
-		t.Logf("contains %q: %s", pattern, obj)
+		t.Logf("contains %q: %q", pattern, obj)
 	} else {
-		t.Fatalf("FAIL: contains %q: %s", pattern, obj)
+		t.Fatalf("FAIL: contains %q: %q", pattern, obj)
 	}
 }

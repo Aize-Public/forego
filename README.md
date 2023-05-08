@@ -1,6 +1,6 @@
 # forego
 
-Go framework
+Go framework to simplify testing, http/ws API, authentication/authorization, etc...
 
 ## `ctx`
 

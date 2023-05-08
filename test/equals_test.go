@@ -1,0 +1,29 @@
+package test
+
+import (
+	"encoding/json"
+	"testing"
+)
+
+func TestEquals(t *testing.T) {
+	equalJSON(false, false).ok(t)
+	equalJSON(1, 1).ok(t)
+	equalJSON(1, 2).fail(t)
+	equalJSON(1, "1").fail(t)
+	equalJSON(1, 1.0).ok(t)
+
+	// json can be compared directly
+	equalJSON(1, json.RawMessage(`1`)).ok(t)
+	equalJSON([]byte("null"), nil).ok(t)
+
+	// array types don't matter
+	equalJSON([]int{1, 2}, []any{1.0, 2.0}).ok(t)
+
+	// map and struct are just an object
+	equalJSON(
+		map[string]int{"one": 1},
+		struct {
+			One int `json:"one"`
+		}{1},
+	).ok(t)
+}

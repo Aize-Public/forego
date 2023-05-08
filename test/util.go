@@ -2,6 +2,7 @@ package test
 
 import (
 	"encoding/json"
+	"testing"
 )
 
 // helper, returns the jsonish value as string, or an error as string
@@ -21,4 +22,29 @@ func jsonish(v any) string {
 		return err.Error()
 	}
 	return string(j)
+}
+
+type res struct {
+	succeed bool
+	msg     string
+}
+
+// expect success
+func (res res) ok(t *testing.T) {
+	t.Helper()
+	if res.succeed {
+		t.Logf("ok %s", res.msg)
+	} else {
+		t.Fatalf("FAIL %s", res.msg)
+	}
+}
+
+// expect a failure
+func (res res) fail(t *testing.T) {
+	t.Helper()
+	if res.succeed {
+		t.Fatalf("!FAIL %s", res.msg)
+	} else {
+		t.Logf("!ok %s", res.msg)
+	}
 }

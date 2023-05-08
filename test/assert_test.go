@@ -1,18 +1,18 @@
-package test_test
+package test
 
 import (
 	"testing"
 
-	"github.com/Aize-Public/forego/test"
+	"github.com/Aize-Public/forego/utils/ast"
 )
 
+func testAssignment(t *testing.T, cond bool) {
+	a := ast.Assignment(1, 1)
+	t.Logf("assignment: %s", a)
+	ContainsJSON(t, a, "42")
+}
 func TestAssert(t *testing.T) {
-	test.RunOk(t, "true", func(t test.T) {
-		yes := true
-		test.Assert(t, yes)
-	})
-	test.RunFail(t, "true", func(t test.T) {
-		no := false
-		test.Assert(t, no)
-	})
+	yes := 42 > 7
+	Assert(t, yes)
+	testAssignment(t, yes)
 }
