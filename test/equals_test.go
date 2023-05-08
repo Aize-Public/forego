@@ -6,18 +6,18 @@ import (
 )
 
 func TestEquals(t *testing.T) {
-	equalJSON(false, false).ok(t)
-	equalJSON(1, 1).ok(t)
-	equalJSON(1, 2).fail(t)
-	equalJSON(1, "1").fail(t)
-	equalJSON(1, 1.0).ok(t)
+	equalJSON(false, false).true(t)
+	equalJSON(1, 1).true(t)
+	equalJSON(1, 2).false(t)
+	equalJSON(1, "1").false(t)
+	equalJSON(1, 1.0).true(t)
 
 	// json can be compared directly
-	equalJSON(1, json.RawMessage(`1`)).ok(t)
-	equalJSON([]byte("null"), nil).ok(t)
+	equalJSON(1, json.RawMessage(`1`)).true(t)
+	equalJSON([]byte("null"), nil).true(t)
 
 	// array types don't matter
-	equalJSON([]int{1, 2}, []any{1.0, 2.0}).ok(t)
+	equalJSON([]int{1, 2}, []any{1.0, 2.0}).true(t)
 
 	// map and struct are just an object
 	equalJSON(
@@ -25,5 +25,5 @@ func TestEquals(t *testing.T) {
 		struct {
 			One int `json:"one"`
 		}{1},
-	).ok(t)
+	).true(t)
 }

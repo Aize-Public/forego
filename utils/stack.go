@@ -24,9 +24,9 @@ func Stack(above, max int) []string {
 }
 
 type StackFrame struct {
-	File string // use -trimpath to make it consistent
+	File string
 	Line int
-	Func string // i.e.: aize.io/monorepo/libs-go/util_test.testCaller
+	Func string
 }
 
 // Returns the StackFrame of the caller if above is zero.

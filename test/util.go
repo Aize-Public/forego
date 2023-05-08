@@ -30,7 +30,7 @@ type res struct {
 }
 
 // expect success
-func (res res) ok(t *testing.T) {
+func (res res) true(t *testing.T) {
 	t.Helper()
 	if res.succeed {
 		t.Logf("ok %s", res.msg)
@@ -40,7 +40,7 @@ func (res res) ok(t *testing.T) {
 }
 
 // expect a failure
-func (res res) fail(t *testing.T) {
+func (res res) false(t *testing.T) {
 	t.Helper()
 	if res.succeed {
 		t.Fatalf("!FAIL %s", res.msg)

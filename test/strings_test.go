@@ -3,7 +3,7 @@ package test
 import "testing"
 
 func TestContains(t *testing.T) {
-	contains("foobar", "oo").ok(t)
-	contains("foobar", "").ok(t)
-	contains("foobar", "cuz").fail(t)
+	contains("foobar", "oo").true(t)
+	contains("foobar", "").true(t)
+	contains("foobar", "cuz").false(t)
 }

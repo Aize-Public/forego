@@ -10,14 +10,14 @@ import (
 func ContainsJSON(t *testing.T, obj any, pattern string) {
 	t.Helper()
 	s := jsonish(obj)
-	contains(s, pattern).ok(t)
+	contains(s, pattern).true(t)
 }
 
 // check if the json of obj does NOT contains pattern
 func NotContainsJSON(t *testing.T, obj any, pattern string) {
 	t.Helper()
 	s := jsonish(obj)
-	contains(s, pattern).fail(t)
+	contains(s, pattern).false(t)
 }
 
 func contains(s string, pattern string) res {

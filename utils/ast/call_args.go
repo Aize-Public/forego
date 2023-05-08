@@ -52,12 +52,12 @@ func Caller(above int) (call *Call, err error) {
 	fname := util.Caller(above + 1).FuncName()
 	src, err := os.ReadFile(stack.AbsFile())
 	if err != nil {
-		return nil, ctx.Errorf(nil, "opening %q: %w", stack.AbsFile(), err)
+		return nil, ctx.NewErrorf(nil, "opening %q: %w", stack.AbsFile(), err)
 	}
 	fset := token.NewFileSet() // positions are relative to fset
 	f, err := parser.ParseFile(fset, stack.AbsFile(), src, 0)
 	if err != nil {
-		return nil, ctx.Errorf(nil, "parsing %q: %w", stack.AbsFile(), err)
+		return nil, ctx.NewErrorf(nil, "parsing %q: %w", stack.AbsFile(), err)
 	}
 
 	ast.Walk(visitor{
@@ -71,7 +71,7 @@ func Caller(above int) (call *Call, err error) {
 	}, f)
 
 	if call == nil {
-		return nil, ctx.Errorf(nil, "can't find function %q in %s:%d", fname, stack.File, stack.Line)
+		return nil, ctx.NewErrorf(nil, "can't find function %q in %s:%d", fname, stack.File, stack.Line)
 	}
 	return call, nil
 }

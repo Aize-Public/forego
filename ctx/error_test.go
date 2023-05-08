@@ -14,12 +14,12 @@ func TestError(t *testing.T) {
 	c := ctx.TODO()
 	var err error
 	err = io.EOF
-	err = ctx.Errorf(c, "wrap: %w", err)
-	err = ctx.Error(c, err)
+	err = ctx.NewErrorf(c, "wrap: %w", err)
+	err = ctx.NewError(c, err)
 	err = fmt.Errorf("wrap more: %w", err)
 	test.Error(t, err)
 
-	var cerr ctx.Err
+	var cerr ctx.Error
 	ok := errors.As(err, &cerr)
 	test.Assert(t, ok)
 	test.Error(t, cerr)

@@ -7,28 +7,28 @@ import (
 	"github.com/Aize-Public/forego/utils"
 )
 
-func Errorf(c C, f string, args ...any) error {
+func NewErrorf(c C, f string, args ...any) error {
 	return maybeWrap(c, fmt.Errorf(f, args...))
 }
 
-func Error(c C, err error) error {
+func NewError(c C, err error) error {
 	return maybeWrap(c, err)
 }
 
 // a generic error which contains the stack trace
-type Err struct {
+type Error struct {
 	error
 	Stack []string
 	C     C
 }
 
-func (err Err) Unwrap() error {
+func (err Error) Unwrap() error {
 	return err.error
 }
 
-func (this Err) Is(err error) bool {
+func (this Error) Is(err error) bool {
 	switch err.(type) {
-	case *Err, Err:
+	case *Error, Error:
 		return true
 	default:
 		return errors.Is(this.error, err)
@@ -36,10 +36,10 @@ func (this Err) Is(err error) bool {
 }
 
 func maybeWrap(c C, err error) error {
-	if errors.Is(err, Err{}) {
+	if errors.Is(err, Error{}) {
 		return err // already wrapped
 	}
-	return Err{
+	return Error{
 		error: err,
 		Stack: utils.Stack(2, 100),
 		C:     c,

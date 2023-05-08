@@ -6,11 +6,11 @@ import (
 )
 
 func EqualsJSON(t *testing.T, expect, got any) {
-	equalJSON(expect, got).ok(t)
+	equalJSON(expect, got).true(t)
 }
 
 func NotEqualsJSON(t *testing.T, expect, got any) {
-	equalJSON(expect, got).fail(t)
+	equalJSON(expect, got).false(t)
 }
 
 func equalJSON(expect, got any) res {
