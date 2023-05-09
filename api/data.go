@@ -1,24 +1,27 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
-	"reflect"
 
 	"github.com/Aize-Public/forego/ctx"
 )
 
 type Data interface {
-	Unmarshal(c context.Context, name string, into reflect.Value) error
-	Marshal(c context.Context, name string, from reflect.Value) error
+	Unmarshal(c ctx.C, name string, into any) error
+	Marshal(c ctx.C, name string, from any) error
 }
 
 type JSON map[string]json.RawMessage
 
 var _ Data = JSON{}
 
-func (this JSON) Marshal(c context.Context, name string, from reflect.Value) error {
-	j, err := json.Marshal(from.Interface())
+func (this JSON) String() string {
+	j, _ := json.Marshal(this)
+	return string(j)
+}
+
+func (this JSON) Marshal(c ctx.C, name string, from any) error {
+	j, err := json.Marshal(from)
 	if err != nil {
 		return ctx.NewErrorf(c, "can't Marshal %q: %w", name, err)
 	}
@@ -26,12 +29,12 @@ func (this JSON) Marshal(c context.Context, name string, from reflect.Value) err
 	return nil
 }
 
-func (this JSON) Unmarshal(c context.Context, name string, into reflect.Value) error {
+func (this JSON) Unmarshal(c ctx.C, name string, into any) error {
 	j, ok := this[name]
 	if !ok {
 		return nil
 	}
-	err := json.Unmarshal(j, into.Interface())
+	err := json.Unmarshal(j, into)
 	if err != nil {
 		return ctx.NewErrorf(c, "can't Unmarshal %q: %w", name, err)
 	}

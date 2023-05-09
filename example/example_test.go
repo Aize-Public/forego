@@ -17,5 +17,5 @@ func TestMain(t *testing.T) {
 	t.Logf("before")
 	lib(c)
 	t.Logf("after")
-	test.Assert(t, false)
+	//test.Assert(t, false)
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/Aize-Public/forego/api"
+	"github.com/Aize-Public/forego/ctx"
 )
 
 func TestHandler(t *testing.T) {
@@ -19,16 +20,16 @@ func TestHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 	data := TestData{
-		UnmarshalFunc: func(c context.Context, name string, into reflect.Value) error {
+		UnmarshalFunc: func(c ctx.C, name string, into any) error {
 			switch name {
 			case "str":
-				into.SetString("foo")
+				reflect.ValueOf(into).SetString("foo")
 			default:
 			}
 			t.Logf("unmarshal(%q) => %v", name, into)
 			return nil
 		},
-		MarshalFunc: func(c context.Context, name string, from reflect.Value) error {
+		MarshalFunc: func(c ctx.C, name string, from any) error {
 			t.Logf("marshal(%q) <= %v", name, from)
 			return nil
 		},
@@ -46,15 +47,15 @@ func TestHandler(t *testing.T) {
 }
 
 type TestData struct {
-	UnmarshalFunc func(c context.Context, name string, into reflect.Value) error
-	MarshalFunc   func(c context.Context, name string, from reflect.Value) error
+	UnmarshalFunc func(c ctx.C, name string, into any) error
+	MarshalFunc   func(c ctx.C, name string, from any) error
 }
 
-func (this TestData) Unmarshal(c context.Context, name string, into reflect.Value) error {
+func (this TestData) Unmarshal(c ctx.C, name string, into any) error {
 	return this.UnmarshalFunc(c, name, into)
 }
 
-func (this TestData) Marshal(c context.Context, name string, into reflect.Value) error {
+func (this TestData) Marshal(c ctx.C, name string, into any) error {
 	return this.MarshalFunc(c, name, into)
 }
 
