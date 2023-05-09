@@ -6,18 +6,22 @@ import (
 )
 
 func Nil(t *testing.T, obj any) {
+	t.Helper()
 	isNil(obj).true(t)
 }
 
 func NotNil(t *testing.T, obj any) {
+	t.Helper()
 	isNil(obj).false(t)
 }
 
 func NoError(t *testing.T, err error) {
+	t.Helper()
 	isNil(err).true(t)
 }
 
 func Error(t *testing.T, err error) {
+	t.Helper()
 	isNil(err).false(t)
 }
 

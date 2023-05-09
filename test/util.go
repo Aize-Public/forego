@@ -29,22 +29,22 @@ type res struct {
 	msg     string
 }
 
-// expect success
+// expect true
 func (res res) true(t *testing.T) {
 	t.Helper()
 	if res.succeed {
-		t.Logf("ok %s", res.msg)
+		t.Logf("OK %s", res.msg)
 	} else {
 		t.Fatalf("FAIL %s", res.msg)
 	}
 }
 
-// expect a failure
+// expect false
 func (res res) false(t *testing.T) {
 	t.Helper()
 	if res.succeed {
-		t.Fatalf("!FAIL %s", res.msg)
+		t.Fatalf("FAIL! %s", res.msg)
 	} else {
-		t.Logf("!ok %s", res.msg)
+		t.Logf("OK! %s", res.msg)
 	}
 }

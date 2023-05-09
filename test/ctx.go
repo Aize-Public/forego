@@ -10,6 +10,7 @@ import (
 )
 
 func C(t *testing.T) ctx.C {
+	t.Helper()
 	c := context.Background()
 	c = log.WithLoggerAndHelper(c, func(ln log.Line) {
 		if testing.Verbose() {

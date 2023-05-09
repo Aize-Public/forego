@@ -24,6 +24,6 @@ func contains(s string, pattern string) res {
 	if strings.Contains(s, pattern) {
 		return res{true, s}
 	} else {
-		return res{false, fmt.Sprintf("%q not found in %q", pattern, s)}
+		return res{false, fmt.Sprintf("%q not in %q", pattern, s)}
 	}
 }
