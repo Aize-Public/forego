@@ -35,6 +35,7 @@ func parseTags(c context.Context, f reflect.StructField) (tag tag, err error) {
 			tag.out = false
 			tag.in = false
 			tag.auth = true
+			// TODO HEAD
 		default:
 			return tag, fmt.Errorf("invalid tag: %q", p)
 		}

@@ -1,42 +1,28 @@
 package api
 
 import (
-	"encoding/json"
+	"reflect"
 
 	"github.com/Aize-Public/forego/ctx"
 )
 
-type Data interface {
-	Unmarshal(c ctx.C, name string, into any) error
-	Marshal(c ctx.C, name string, from any) error
+// the client request object used to Marshal a request to a server
+type ClientRequest interface {
+	Marshal(c ctx.C, name string, into reflect.Value) error
 }
 
-type JSON map[string]json.RawMessage
-
-var _ Data = JSON{}
-
-func (this JSON) String() string {
-	j, _ := json.Marshal(this)
-	return string(j)
+// the client response object used to unmarshal the response from the server
+type ClientResponse interface {
+	Unmarshal(c ctx.C, name string, from reflect.Value) error
 }
 
-func (this JSON) Marshal(c ctx.C, name string, from any) error {
-	j, err := json.Marshal(from)
-	if err != nil {
-		return ctx.NewErrorf(c, "can't Marshal %q: %w", name, err)
-	}
-	this[name] = j
-	return nil
+// the server request object used to Unmarshal the request from the client
+type ServerRequest interface {
+	Unmarshal(c ctx.C, name string, into reflect.Value) error
+	Auth(c ctx.C, into reflect.Value, required bool) error
 }
 
-func (this JSON) Unmarshal(c ctx.C, name string, into any) error {
-	j, ok := this[name]
-	if !ok {
-		return nil
-	}
-	err := json.Unmarshal(j, into)
-	if err != nil {
-		return ctx.NewErrorf(c, "can't Unmarshal %q: %w", name, err)
-	}
-	return nil
+// the server response object used to marshal the response to the client
+type ServerResponse interface {
+	Marshal(c ctx.C, name string, into reflect.Value) error
 }
