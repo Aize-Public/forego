@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/Aize-Public/forego/ctx"
-	"github.com/Aize-Public/forego/utils"
 )
 
 type Line struct {
@@ -69,7 +68,7 @@ func Errorf(c ctx.C, f string, args ...any) {
 	l := getLogger(c)
 	l.helper()
 	l.log(Line{
-		Src:   utils.Caller(1).FileLine(),
+		Src:   caller(1),
 		Level: "error",
 	}.formatf(c, f, args...))
 }
@@ -78,7 +77,7 @@ func Warnf(c ctx.C, f string, args ...any) {
 	l := getLogger(c)
 	l.helper()
 	l.log(Line{
-		Src:   utils.Caller(1).FileLine(),
+		Src:   caller(1),
 		Level: "warn",
 	}.formatf(c, f, args...))
 }
@@ -87,7 +86,7 @@ func Infof(c ctx.C, f string, args ...any) {
 	l := getLogger(c)
 	l.helper()
 	l.log(Line{
-		Src:   utils.Caller(1).FileLine(),
+		Src:   caller(1),
 		Level: "info",
 	}.formatf(c, f, args...))
 }
@@ -96,7 +95,7 @@ func Debugf(c ctx.C, f string, args ...any) {
 	l := getLogger(c)
 	l.helper()
 	l.log(Line{
-		Src:   utils.Caller(1).FileLine(),
+		Src:   caller(1),
 		Level: "debug",
 	}.formatf(c, f, args...))
 }

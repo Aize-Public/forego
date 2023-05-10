@@ -2,6 +2,7 @@ package test
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/Aize-Public/forego/utils/ast"
@@ -9,12 +10,12 @@ import (
 
 func Nil(t *testing.T, obj any) {
 	t.Helper()
-	isNil(obj).assignment(0, 1).true(t)
+	isNil(obj).argument(0, 1).true(t)
 }
 
 func NotNil(t *testing.T, obj any) {
 	t.Helper()
-	isNil(obj).assignment(0, 1).false(t)
+	isNil(obj).argument(0, 1).false(t)
 }
 
 func NoError(t *testing.T, err error) {
@@ -36,6 +37,12 @@ func isNil(a any) res {
 	case nil:
 		return res{true, "nil"}
 	default:
-		return res{false, fmt.Sprint(a)}
+		v := reflect.ValueOf(a)
+		switch v.Kind() {
+		case reflect.Slice, reflect.Map, reflect.Chan, reflect.Pointer:
+			return res{v.IsNil(), fmt.Sprintf("%#v", a)}
+		default:
+			return res{false, fmt.Sprint(a)}
+		}
 	}
 }
