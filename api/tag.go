@@ -1,10 +1,11 @@
 package api
 
 import (
-	"context"
 	"fmt"
 	"reflect"
 	"strings"
+
+	"github.com/Aize-Public/forego/ctx"
 )
 
 type tag struct {
@@ -15,15 +16,32 @@ type tag struct {
 	required bool
 }
 
-func parseTags(c context.Context, f reflect.StructField) (tag tag, err error) {
+func tagName(c ctx.C, f reflect.StructField) string {
+	var name string
+	enc := f.Tag.Get("enc")
+	json := f.Tag.Get("json")
+
+	if enc != "" {
+		name, _, _ = strings.Cut(enc, ",") // honor enc first
+	} else if json != "" {
+		name, _, _ = strings.Cut(json, ",") // then json
+	}
+	if name == "" { // if still no name, use field name
+		name = f.Name
+	}
+	return name
+}
+
+func parseTags(c ctx.C, f reflect.StructField) (tag tag, err error) {
 	parts := strings.Split(f.Tag.Get("api"), ",")
-	tag.name = parts[0]
+	tag.name = tagName(c, f)
 	if tag.name == "" {
 		tag.name = f.Name // fallback to field name
 	}
 	tag.in = true
 	tag.out = true
-	for _, p := range parts[1:] {
+	for _, p := range parts {
+		//log.Debugf(c, "%s %s", f.Name, p)
 		switch p {
 		case "in":
 			tag.out = false
@@ -35,7 +53,6 @@ func parseTags(c context.Context, f reflect.StructField) (tag tag, err error) {
 			tag.out = false
 			tag.in = false
 			tag.auth = true
-			// TODO HEAD
 		default:
 			return tag, fmt.Errorf("invalid tag: %q", p)
 		}

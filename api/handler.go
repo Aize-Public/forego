@@ -33,6 +33,7 @@ func NewHandler[T any](c ctx.C, init T) (Handler[T], error) {
 		if err != nil {
 			return this, err
 		}
+		log.Debugf(c, "%T %+v", init, tag)
 		f := field{i, tag}
 		if tag.auth {
 			if this.auth != nil {
@@ -112,11 +113,8 @@ func (this server[T]) Send(c ctx.C, obj T, res ServerResponse) (err error) {
 	return nil
 }
 
-func (this client[T]) Recv(c ctx.C, res ClientResponse, into T) (err error) {
-	v := reflect.ValueOf(into)
-	if v.Kind() != reflect.Pointer {
-		return ctx.NewErrorf(c, "expected pointer, got %T", into)
-	}
+func (this client[T]) Recv(c ctx.C, res ClientResponse, into *T) (err error) {
+	v := reflect.ValueOf(into).Elem()
 	for _, f := range this.out {
 		fv := v.Field(f.i)
 		err := res.Unmarshal(c, f.tag.name, fv)

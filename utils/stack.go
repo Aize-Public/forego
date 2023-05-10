@@ -53,7 +53,7 @@ func (this StackFrame) AbsFile() string {
 		return mod.path + path
 	}
 
-	return ""
+	return this.File
 }
 
 func (this StackFrame) FileLine() string {

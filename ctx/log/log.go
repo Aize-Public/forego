@@ -65,6 +65,33 @@ func getLogger(c ctx.C) loggerValue {
 	return logger
 }
 
+func Errorf(c ctx.C, f string, args ...any) {
+	l := getLogger(c)
+	l.helper()
+	l.log(Line{
+		Src:   utils.Caller(1).FileLine(),
+		Level: "error",
+	}.formatf(c, f, args...))
+}
+
+func Warnf(c ctx.C, f string, args ...any) {
+	l := getLogger(c)
+	l.helper()
+	l.log(Line{
+		Src:   utils.Caller(1).FileLine(),
+		Level: "warn",
+	}.formatf(c, f, args...))
+}
+
+func Infof(c ctx.C, f string, args ...any) {
+	l := getLogger(c)
+	l.helper()
+	l.log(Line{
+		Src:   utils.Caller(1).FileLine(),
+		Level: "info",
+	}.formatf(c, f, args...))
+}
+
 func Debugf(c ctx.C, f string, args ...any) {
 	l := getLogger(c)
 	l.helper()

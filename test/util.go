@@ -2,7 +2,10 @@ package test
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
+
+	"github.com/Aize-Public/forego/utils/ast"
 )
 
 // helper, returns the jsonish value as string, or an error as string
@@ -29,8 +32,24 @@ type res struct {
 	msg     string
 }
 
+func (res res) argument(above, argNum int) res {
+	call, _ := ast.Caller(above + 1)
+	res.msg = call.Args[argNum].Src + ": " + res.msg
+	return res
+}
+
+func (res res) assignment(above, argNum int) res {
+	res.msg = ast.Assignment(above+1, argNum) + ": " + res.msg
+	return res
+}
+
+func (res res) prefix(f string, args ...any) res {
+	res.msg = fmt.Sprintf(f, args...) + ": " + res.msg
+	return res
+}
+
 // expect true
-func (res res) true(t *testing.T) {
+func (res res) true(t *testing.T, f ...any) {
 	t.Helper()
 	if res.succeed {
 		t.Logf("OK %s", res.msg)
@@ -43,8 +62,8 @@ func (res res) true(t *testing.T) {
 func (res res) false(t *testing.T) {
 	t.Helper()
 	if res.succeed {
-		t.Fatalf("FAIL! %s", res.msg)
+		t.Fatalf("FAIL %s", res.msg)
 	} else {
-		t.Logf("OK! %s", res.msg)
+		t.Logf("OK %s", res.msg)
 	}
 }
