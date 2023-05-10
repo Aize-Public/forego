@@ -1,6 +1,9 @@
 package ctx
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 func WithCancel(c C) (C, CancelFunc) {
 	c, cf := context.WithCancelCause(c)
@@ -9,4 +12,16 @@ func WithCancel(c C) (C, CancelFunc) {
 
 func TODO() C {
 	return context.TODO()
+}
+
+func Cause(c C) error {
+	return context.Cause(c)
+}
+
+func WithTimeout(c C, d time.Duration) (C, func()) {
+	return context.WithTimeout(c, d)
+}
+
+func WithDeadline(c C, t time.Time) (C, func()) {
+	return context.WithDeadline(c, t)
 }

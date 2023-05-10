@@ -3,8 +3,7 @@ package ctx
 import (
 	"errors"
 	"fmt"
-
-	"github.com/Aize-Public/forego/utils"
+	"runtime"
 )
 
 func NewErrorf(c C, f string, args ...any) error {
@@ -41,9 +40,22 @@ func maybeWrap(c C, err error) error {
 	}
 	return Error{
 		error: err,
-		Stack: utils.Stack(2, 100),
+		Stack: stack(2, 100),
 		C:     c,
 	}
+}
+
+func stack(above, max int) []string {
+	stack := make([]string, 0, 20)
+	for len(stack) < max {
+		_, file, line, ok := runtime.Caller(above + 1)
+		if !ok {
+			return stack
+		}
+		stack = append(stack, fmt.Sprintf("%s:%d", file, line))
+		above++
+	}
+	return stack
 }
 
 // just a []byte, but marshal and unmarshal like json.RawMessage and it is printed as string in logs, win win
