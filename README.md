@@ -49,4 +49,10 @@ ok: everything > 7*3
 
 In the case of error, it will print what was the function assigning to the error
 
+## `api`
 
+Framework to automatically create bindings and documentation for APIs:
+* no more test of bindings, just test the logic
+* OpenAPI automatically generated
+* tight integration with http, ws and other streaming services
+* simple and no boiler plate
