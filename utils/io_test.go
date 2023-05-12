@@ -21,7 +21,7 @@ func TestReadAll(t *testing.T) {
 		t0 := time.Now()
 		c, cf := ctx.WithTimeout(c, 50*time.Millisecond)
 		defer cf()
-		in, err := utils.ReadAll(c, r)
+		in, err := utils.ReadAll(c, r, r.Close)
 		test.Error(t, err)
 		test.Assert(t, time.Since(t0) > 50*time.Millisecond)
 		test.Empty(t, in)
@@ -42,7 +42,7 @@ func TestReadAll(t *testing.T) {
 			w.Close()
 		}()
 
-		in, err := utils.ReadAll(c, r)
+		in, err := utils.ReadAll(c, r, r.Close)
 		test.NoError(t, err)
 		test.Assert(t, time.Since(t0) > 50*time.Millisecond)
 		test.EqualsGo(t, "foobar", string(in))

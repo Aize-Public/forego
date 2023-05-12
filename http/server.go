@@ -2,9 +2,11 @@ package http
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/Aize-Public/forego/ctx"
@@ -19,8 +21,8 @@ type Server struct {
 	OnResponse func(Stat)
 }
 
-func NewServer(c ctx.C, cb func(r Stat)) Server {
-	this := Server{
+func NewServer(c ctx.C) *Server {
+	this := &Server{
 		mux: http.NewServeMux(),
 		OnResponse: func(r Stat) {
 			log.Infof(c, "%s %d in %v", r.Path, r.Code, r.Elapsed)
@@ -41,7 +43,6 @@ func NewServer(c ctx.C, cb func(r Stat)) Server {
 		default:
 			this.mux.ServeHTTP(w2, r)
 		}
-
 		this.OnResponse(Stat{
 			Method:  r.Method,
 			Path:    r.URL.Path,
@@ -49,6 +50,9 @@ func NewServer(c ctx.C, cb func(r Stat)) Server {
 			Code:    w2.code,
 			Elapsed: time.Since(t0),
 		})
+	})
+	this.mux.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(204)
 	})
 	return this
 }
@@ -79,29 +83,35 @@ func (this Server) Listen(c ctx.C, addr string) (net.Addr, error) {
 	if err != nil {
 		return ln.Addr(), err
 	}
-
-	// we create a channel for the error
-	ch := make(chan error)
+	ch := make(chan error, 1)
 
 	// we start the server in a goroutine
 	go func() {
-		err := s.Serve(ln)
-		select {
-		case ch <- err:
-		default:
-			if c.Err() == nil {
-				log.Errorf(c, "http closing: %v", err)
-			}
+		// we wrap the listener, so the first call to Accept() will write nil to the error channel
+		l := &listener{
+			Listener: ln,
+			f: func() {
+				ch <- nil
+			},
 		}
+		err := s.Serve(l)
+		log.Warnf(c, "listen(%q) %v", addr, err)
 	}()
 
-	// if it doesn't fails in a second, we consider it good to go!
-	select {
-	case err := <-ch:
-		return ln.Addr(), err
-	case <-time.After(time.Second):
-		return ln.Addr(), nil
-	}
+	// blocks until either an error, or the first Accept() call happen
+	return ln.Addr(), <-ch
+}
+
+// wrapper for a net listener
+type listener struct {
+	net.Listener
+	once sync.Once
+	f    func()
+}
+
+func (this *listener) Accept() (net.Conn, error) {
+	this.once.Do(this.f)
+	return this.Listener.Accept()
 }
 
 func (this *Server) OnRequest(pattern string, f func(c ctx.C, in []byte, r *http.Request) ([]byte, error)) {
@@ -119,13 +129,31 @@ func (this *Server) OnRequest(pattern string, f func(c ctx.C, in []byte, r *http
 			return f(c, in, r)
 		}()
 		if err != nil {
-			w.WriteHeader(ErrorCode(err, 500))
+			log.Warnf(c, "http: %v", err)
+			code := ErrorCode(err, 500)
+			if code < 500 {
+				j, _ := json.Marshal(map[string]any{
+					"error":    err.Error(),
+					"tracking": nil, // TODO
+				})
+				w.Write(j)
+			} else {
+				j, _ := json.Marshal(map[string]any{
+					// NO CLIENT REPORTING FOR INTERNAL ERRORS (due to security reason, we don't want to leak information about internals)
+					"tracking": nil, // TODO
+				})
+				w.Write(j)
+			}
+			w.WriteHeader(code)
 			return
 		}
+
 		if len(out) == 0 {
+			// no reponse content
 			w.WriteHeader(204)
 			return
 		}
+
 		w.WriteHeader(200)
 		_, err = w.Write(out)
 		if err != nil {

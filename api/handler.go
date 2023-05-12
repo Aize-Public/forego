@@ -1,6 +1,7 @@
 package api
 
 import (
+	"net/url"
 	"reflect"
 
 	"github.com/Aize-Public/forego/ctx"
@@ -9,14 +10,26 @@ import (
 
 // each type of object T has its own handler
 type Handler[T any] struct {
-	typ reflect.Type
+	typ  reflect.Type
+	urls []*url.URL
 
 	auth *field
 	in   []field
 	out  []field
 }
 
-func NewHandler[T any](c ctx.C, init T) (Handler[T], error) {
+func NewServer[T any](c ctx.C, init T) (Server[T], error) {
+	h, err := newHandler(c, init)
+	return Server[T]{h}, err
+}
+
+func NewClient[T any](c ctx.C) (Client[T], error) {
+	var init T // client should cache, so no initialization allowed
+	h, err := newHandler(c, init)
+	return Client[T]{h}, err
+}
+
+func newHandler[T any](c ctx.C, init T) (Handler[T], error) {
 	log.Debugf(c, "NewHandler[%T]", init)
 	initV := reflect.ValueOf(init)
 	this := Handler[T]{
@@ -52,23 +65,31 @@ func NewHandler[T any](c ctx.C, init T) (Handler[T], error) {
 	return this, nil
 }
 
+func (this *Handler[T]) URL() *url.URL {
+	if len(this.urls) > 0 {
+		return this.urls[0]
+	}
+	return nil
+}
+
+func (this *Handler[T]) URLs() []*url.URL {
+	return this.urls
+}
+
 type field struct {
 	i   int
 	tag tag
 }
 
-func (this Handler[T]) Server() server[T] { return server[T]{this} }
-func (this Handler[T]) Client() client[T] { return client[T]{this} }
-
-type server[T any] struct {
+type Server[T any] struct {
 	Handler[T]
 }
 
-type client[T any] struct {
+type Client[T any] struct {
 	Handler[T]
 }
 
-func (this client[T]) Send(c ctx.C, obj T, data ClientRequest) error {
+func (this Client[T]) Send(c ctx.C, obj T, data ClientRequest) error {
 	v := reflect.ValueOf(obj)
 	for _, f := range this.in {
 		fv := v.Field(f.i)
@@ -80,7 +101,7 @@ func (this client[T]) Send(c ctx.C, obj T, data ClientRequest) error {
 	return nil
 }
 
-func (this server[T]) Recv(c ctx.C, req ServerRequest) (T, error) {
+func (this Server[T]) Recv(c ctx.C, req ServerRequest) (T, error) {
 	var zero T
 	ptrV := reflect.New(this.typ)
 	v := ptrV.Elem()
@@ -101,7 +122,7 @@ func (this server[T]) Recv(c ctx.C, req ServerRequest) (T, error) {
 	return v.Interface().(T), nil
 }
 
-func (this server[T]) Send(c ctx.C, obj T, res ServerResponse) (err error) {
+func (this Server[T]) Send(c ctx.C, obj T, res ServerResponse) (err error) {
 	v := reflect.ValueOf(obj)
 	for _, f := range this.out {
 		fv := v.Field(f.i)
@@ -113,7 +134,7 @@ func (this server[T]) Send(c ctx.C, obj T, res ServerResponse) (err error) {
 	return nil
 }
 
-func (this client[T]) Recv(c ctx.C, res ClientResponse, into *T) (err error) {
+func (this Client[T]) Recv(c ctx.C, res ClientResponse, into *T) (err error) {
 	v := reflect.ValueOf(into).Elem()
 	for _, f := range this.out {
 		fv := v.Field(f.i)

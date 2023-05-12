@@ -3,6 +3,7 @@ package http
 import (
 	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/Aize-Public/forego/ctx"
 )
@@ -20,6 +21,9 @@ type Error struct {
 }
 
 func (this Error) Error() string {
+	if this.Err == nil {
+		return fmt.Sprintf("%d %s", this.Code, http.StatusText(this.Code))
+	}
 	return fmt.Sprintf("%d %v", this.Code, this.Err)
 }
 

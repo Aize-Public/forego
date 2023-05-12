@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"io"
 	"reflect"
 
 	"github.com/Aize-Public/forego/ctx"
@@ -29,6 +30,14 @@ var _ ClientResponse = &JSON{}
 func (this JSON) String() string {
 	j, _ := json.Marshal(this)
 	return string(j)
+}
+
+func (this *JSON) ReadFrom(c ctx.C, r io.Reader) error {
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return ctx.NewErrorf(c, "can't read api.JSON: %w", err)
+	}
+	return json.Unmarshal(data, &this.Data)
 }
 
 func (this *JSON) Auth(c ctx.C, into reflect.Value, required bool) error {

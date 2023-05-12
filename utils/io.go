@@ -9,10 +9,13 @@ import (
 
 // ReadAll() but honors the ctx.C cancel
 // Note: it uses an internal go-routine, which will block on read
-func ReadAll(c ctx.C, r io.ReadCloser) ([]byte, error) {
+// If the close function is passed, it will be called when read is exhausted.
+func ReadAll(c ctx.C, r io.Reader, close func() error) ([]byte, error) {
 	out := bytes.Buffer{}
 	ch := make(chan error, 1)
-	defer r.Close()
+	if close != nil {
+		defer close() // nolint
+	}
 
 	go func() {
 		buf := make([]byte, 8192)
