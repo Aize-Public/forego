@@ -14,6 +14,7 @@ type Handler[T any] struct {
 	urls []*url.URL
 
 	auth *field
+	init map[int]reflect.Value
 	in   []field
 	out  []field
 }
@@ -29,14 +30,24 @@ func NewClient[T any](c ctx.C) (Client[T], error) {
 	return Client[T]{h}, err
 }
 
+// we accept either Type or *Type
 func newHandler[T any](c ctx.C, init T) (Handler[T], error) {
 	log.Debugf(c, "NewHandler[%T]", init)
 	initV := reflect.ValueOf(init)
 	this := Handler[T]{
-		typ: initV.Type(),
+		init: map[int]reflect.Value{},
 	}
+	if initV.Kind() != reflect.Pointer {
+		return this, ctx.NewErrorf(c, "expected *struct, got %v", initV.Type())
+	}
+	if initV.IsZero() {
+		initV = reflect.New(reflect.TypeOf(init).Elem())
+	}
+	log.Debugf(c, "initV: %#v", initV)
+	initV = initV.Elem()
+	this.typ = initV.Type()
 	if this.typ.Kind() != reflect.Struct {
-		return this, ctx.NewErrorf(c, "expected struct, got %T", init)
+		return this, ctx.NewErrorf(c, "expected *struct, got %v", initV.Type())
 	}
 
 	// TODO(oha) use init as initializer
@@ -46,7 +57,7 @@ func newHandler[T any](c ctx.C, init T) (Handler[T], error) {
 		if err != nil {
 			return this, err
 		}
-		log.Debugf(c, "%T %+v", init, tag)
+		log.Debugf(c, "%v.%s %+v", this.typ, ft.Name, tag)
 		f := field{i, tag}
 		if tag.auth {
 			if this.auth != nil {
@@ -59,6 +70,16 @@ func newHandler[T any](c ctx.C, init T) (Handler[T], error) {
 		}
 		if tag.out {
 			this.out = append(this.out, f)
+		}
+		if tag.url != nil {
+			this.urls = append(this.urls, tag.url)
+		}
+		if !tag.in && !tag.out && tag.url == nil {
+			v := initV.Field(f.i)
+			if !v.IsZero() {
+				this.init[f.i] = v
+				log.Debugf(c, "init %v.%s = %#v", this.typ, f.tag.name, v)
+			}
 		}
 	}
 
@@ -90,7 +111,7 @@ type Client[T any] struct {
 }
 
 func (this Client[T]) Send(c ctx.C, obj T, data ClientRequest) error {
-	v := reflect.ValueOf(obj)
+	v := reflect.ValueOf(obj).Elem()
 	for _, f := range this.in {
 		fv := v.Field(f.i)
 		err := data.Marshal(c, f.tag.name, fv)
@@ -105,6 +126,10 @@ func (this Server[T]) Recv(c ctx.C, req ServerRequest) (T, error) {
 	var zero T
 	ptrV := reflect.New(this.typ)
 	v := ptrV.Elem()
+	for i, fv := range this.init {
+		v.Field(i).Set(fv)
+		log.Debugf(c, "init %T.%v = %#v", this.typ, this.typ.Field(i).Name, fv)
+	}
 	for _, f := range this.in {
 		fv := v.Field(f.i)
 		err := req.Unmarshal(c, f.tag.name, fv)
@@ -119,11 +144,11 @@ func (this Server[T]) Recv(c ctx.C, req ServerRequest) (T, error) {
 			return zero, ctx.NewErrorf(c, "can't RecvRequest %T Auth(): %w", zero, err)
 		}
 	}
-	return v.Interface().(T), nil
+	return v.Addr().Interface().(T), nil
 }
 
 func (this Server[T]) Send(c ctx.C, obj T, res ServerResponse) (err error) {
-	v := reflect.ValueOf(obj)
+	v := reflect.ValueOf(obj).Elem()
 	for _, f := range this.out {
 		fv := v.Field(f.i)
 		err := res.Marshal(c, f.tag.name, fv)
@@ -134,7 +159,7 @@ func (this Server[T]) Send(c ctx.C, obj T, res ServerResponse) (err error) {
 	return nil
 }
 
-func (this Client[T]) Recv(c ctx.C, res ClientResponse, into *T) (err error) {
+func (this Client[T]) Recv(c ctx.C, res ClientResponse, into T) (err error) {
 	v := reflect.ValueOf(into).Elem()
 	for _, f := range this.out {
 		fv := v.Field(f.i)

@@ -39,6 +39,11 @@ func API[T Doable](c ctx.C, s *Server, obj T) error {
 		return json.Marshal(res.Data)
 	}
 
+	urls := handler.URLs()
+	if len(urls) == 0 {
+		return ctx.NewErrorf(c, "no URL to register for %T", obj)
+	}
+
 	for _, u := range handler.URLs() {
 		s.OnRequest(u.Path, f)
 	}

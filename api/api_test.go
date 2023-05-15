@@ -15,10 +15,10 @@ func TestAPI(t *testing.T) {
 	alice := UID("alice")
 
 	t.Logf("handler...")
-	ser, err := api.NewServer(c, WordCount{})
+	ser, err := api.NewServer(c, &WordCount{})
 	test.NoError(t, err)
 
-	cli, err := api.NewClient[WordCount](c)
+	cli, err := api.NewClient[*WordCount](c)
 	test.NoError(t, err)
 
 	obj := WordCount{
@@ -27,7 +27,7 @@ func TestAPI(t *testing.T) {
 	data := &api.JSON{}
 
 	t.Logf("client send...")
-	err = cli.Send(c, obj, data)
+	err = cli.Send(c, &obj, data)
 	test.NoError(t, err)
 	t.Logf("request: %s", data.Data)
 	test.NotEmpty(t, data.Data)

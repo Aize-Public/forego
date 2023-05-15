@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"net/url"
 	"reflect"
 	"strings"
 
@@ -14,6 +15,7 @@ type tag struct {
 	in       bool
 	out      bool
 	required bool
+	url      *url.URL
 }
 
 func tagName(c ctx.C, f reflect.StructField) string {
@@ -29,6 +31,7 @@ func tagName(c ctx.C, f reflect.StructField) string {
 	if name == "" { // if still no name, use field name
 		name = f.Name
 	}
+
 	return name
 }
 
@@ -38,21 +41,29 @@ func parseTags(c ctx.C, f reflect.StructField) (tag tag, err error) {
 	if tag.name == "" {
 		tag.name = f.Name // fallback to field name
 	}
-	tag.in = true
-	tag.out = true
+	if u := f.Tag.Get("url"); u != "" {
+		var err error
+		tag.url, err = url.Parse(u)
+		if err != nil {
+			return tag, ctx.NewErrorf(c, "can't parse url: %q", u)
+		}
+	}
+
 	for _, p := range parts {
 		//log.Debugf(c, "%s %s", f.Name, p)
 		switch p {
 		case "in":
-			tag.out = false
+			tag.in = true
 		case "out":
-			tag.in = false
+			tag.out = true
+		case "both":
+			tag.in = true
+			tag.out = true
 		case "required":
 			tag.required = true
 		case "auth":
-			tag.out = false
-			tag.in = false
 			tag.auth = true
+		case "":
 		default:
 			return tag, fmt.Errorf("invalid tag: %q", p)
 		}

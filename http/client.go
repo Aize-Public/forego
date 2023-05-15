@@ -32,6 +32,10 @@ func (this Client) Get(c ctx.C, url string) ([]byte, error) {
 	return nil, nil
 }
 
+func NewRequest(c ctx.C, method string, url string, body io.Reader) (*http.Request, error) {
+	return http.NewRequestWithContext(c, method, url, body)
+}
+
 func (this Client) Post(c ctx.C, url string, body []byte) ([]byte, error) {
 	req, err := http.NewRequestWithContext(c, "POST", url, bytes.NewBuffer(body))
 	if err != nil {
