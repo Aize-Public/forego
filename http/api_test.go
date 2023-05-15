@@ -3,6 +3,7 @@ package http_test
 import (
 	"bytes"
 	gohttp "net/http"
+	"net/url"
 	"testing"
 
 	"github.com/Aize-Public/forego/api"
@@ -38,14 +39,33 @@ func TestAPI(t *testing.T) {
 	})
 	test.NoError(t, err)
 
-	req, err := http.NewRequest(c, "POST", "/inc", bytes.NewBufferString(`{"name":"foo","amount":3}`))
-	test.NoError(t, err)
-	w := &ResponseWriter{}
-	s.Mux().ServeHTTP(w, req)
-	res := w.Buf.String()
-	test.Assert(t, w.Code == 200)
-	t.Logf("res: %s", res)
+	{
+		req, err := http.NewRequest(c, "POST", "/inc", bytes.NewBufferString(`{"name":"foo","amount":3}`))
+		test.NoError(t, err)
+		w := &ResponseWriter{}
+		s.Mux().ServeHTTP(w, req)
+		res := w.Buf.String()
+		test.Assert(t, w.Code == 200)
+		t.Logf("res: %s", res)
+		test.ContainsJSON(t, res, `:3,`)
+	}
 
+	addr, err := s.Listen(c, "127.0.0.1:0")
+	test.NoError(t, err)
+
+	cli := http.Client{
+		BaseUrl: &url.URL{Scheme: "http", Host: addr.String()},
+	}
+
+	{
+		op := Inc{
+			Name:   "foo",
+			Amount: 42,
+		}
+		err := cli.API(c, &op)
+		test.NoError(t, err)
+		test.EqualsGo(t, 45, op.Current)
+	}
 }
 
 // helpers

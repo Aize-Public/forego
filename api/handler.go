@@ -24,9 +24,8 @@ func NewServer[T any](c ctx.C, init T) (Server[T], error) {
 	return Server[T]{h}, err
 }
 
-func NewClient[T any](c ctx.C) (Client[T], error) {
-	var init T // client should cache, so no initialization allowed
-	h, err := newHandler(c, init)
+func NewClient[T any](c ctx.C, obj T) (Client[T], error) {
+	h, err := newHandler(c, obj)
 	return Client[T]{h}, err
 }
 
@@ -38,7 +37,7 @@ func newHandler[T any](c ctx.C, init T) (Handler[T], error) {
 		init: map[int]reflect.Value{},
 	}
 	if initV.Kind() != reflect.Pointer {
-		return this, ctx.NewErrorf(c, "expected *struct, got %v", initV.Type())
+		return this, ctx.NewErrorf(c, "expected *struct, got %T", init)
 	}
 	if initV.IsZero() {
 		initV = reflect.New(reflect.TypeOf(init).Elem())
@@ -47,7 +46,7 @@ func newHandler[T any](c ctx.C, init T) (Handler[T], error) {
 	initV = initV.Elem()
 	this.typ = initV.Type()
 	if this.typ.Kind() != reflect.Struct {
-		return this, ctx.NewErrorf(c, "expected *struct, got %v", initV.Type())
+		return this, ctx.NewErrorf(c, "expected *struct, got %T", init)
 	}
 
 	// TODO(oha) use init as initializer

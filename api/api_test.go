@@ -18,7 +18,7 @@ func TestAPI(t *testing.T) {
 	ser, err := api.NewServer(c, &WordCount{})
 	test.NoError(t, err)
 
-	cli, err := api.NewClient[*WordCount](c)
+	cli, err := api.NewClient(c, &WordCount{})
 	test.NoError(t, err)
 
 	obj := WordCount{
