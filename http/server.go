@@ -149,7 +149,7 @@ func (this *Server) OnRequest(pattern string, f func(c ctx.C, in []byte, r *http
 		}
 
 		if len(out) == 0 {
-			// no reponse content
+			// no response content
 			w.WriteHeader(204)
 			return
 		}
@@ -157,7 +157,7 @@ func (this *Server) OnRequest(pattern string, f func(c ctx.C, in []byte, r *http
 		w.WriteHeader(200)
 		_, err = w.Write(out)
 		if err != nil {
-			log.Warnf(c, "writing the reponse: %v", err)
+			log.Warnf(c, "writing the response: %v", err)
 		}
 	})
 }

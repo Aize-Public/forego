@@ -55,7 +55,7 @@ func (this CallHandler) Register(s *Server) {
 		w.WriteHeader(200)
 		_, err = w.Write(out)
 		if err != nil {
-			log.Warnf(c, "writing the reponse: %v", err)
+			log.Warnf(c, "writing the response: %v", err)
 		}
 	})
 
