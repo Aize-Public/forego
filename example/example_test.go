@@ -12,7 +12,7 @@ func lib(c ctx.C) {
 	log.Debugf(c, "foobar")
 }
 
-func TestMain(t *testing.T) {
+func TestAll(t *testing.T) {
 	c := test.C(t)
 	t.Logf("before")
 	lib(c)
