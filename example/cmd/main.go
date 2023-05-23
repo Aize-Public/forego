@@ -5,6 +5,7 @@ import (
 
 	"github.com/Aize-Public/forego/ctx"
 	"github.com/Aize-Public/forego/ctx/log"
+	"github.com/Aize-Public/forego/example"
 	"github.com/Aize-Public/forego/http"
 	"github.com/Aize-Public/forego/shutdown"
 )
@@ -15,6 +16,13 @@ func main() {
 	defer log.Warnf(c, "exit")
 
 	s := http.NewServer(c)
+	store := example.Store{
+		Data: map[string]any{
+			"true": true,
+		},
+	}
+	http.RegisterAPI(c, s, &example.Get{Store: &store})
+	http.RegisterAPI(c, s, &example.Set{Store: &store})
 
 	addr, err := s.Listen(c, "127.0.0.1:0")
 	if err != nil {

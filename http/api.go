@@ -6,6 +6,7 @@ import (
 
 	"github.com/Aize-Public/forego/api"
 	"github.com/Aize-Public/forego/ctx"
+	"github.com/Aize-Public/forego/ctx/log"
 )
 
 type Doable interface {
@@ -45,6 +46,7 @@ func RegisterAPI[T Doable](c ctx.C, s *Server, obj T) error {
 	}
 
 	for _, u := range handler.URLs() {
+		log.Debugf(c, "registering to %q", u.Path)
 		s.HandleRequest(u.Path, f)
 	}
 	return nil
