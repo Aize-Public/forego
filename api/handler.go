@@ -42,7 +42,7 @@ func newHandler[T any](c ctx.C, init T) (Handler[T], error) {
 	if initV.IsZero() {
 		initV = reflect.New(reflect.TypeOf(init).Elem())
 	}
-	log.Debugf(c, "initV: %#v", initV)
+	//log.Debugf(c, "initV: %+v", initV)
 	initV = initV.Elem()
 	this.typ = initV.Type()
 	if this.typ.Kind() != reflect.Struct {

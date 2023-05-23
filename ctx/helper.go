@@ -14,6 +14,11 @@ func TODO() C {
 	return context.TODO()
 }
 
+func Background() (C, CancelFunc) {
+	c, cf := context.WithCancelCause(context.Background())
+	return c, CancelFunc(cf)
+}
+
 func Cause(c C) error {
 	return context.Cause(c)
 }

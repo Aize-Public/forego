@@ -11,6 +11,7 @@ import (
 
 	"github.com/Aize-Public/forego/ctx"
 	"github.com/Aize-Public/forego/ctx/log"
+	"github.com/Aize-Public/forego/shutdown"
 )
 
 type Server struct {
@@ -79,14 +80,16 @@ func (this Server) Listen(c ctx.C, addr string) (net.Addr, error) {
 	if addr == "" {
 		addr = ":http"
 	}
+	log.Debugf(c, "listening to %s", addr)
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
-		return ln.Addr(), err
+		return nil, err
 	}
 	ch := make(chan error, 1)
 
 	// we start the server in a goroutine
 	go func() {
+		defer shutdown.Hold().Release()
 		// we wrap the listener, so the first call to Accept() will write nil to the error channel
 		l := &listener{
 			Listener: ln,
@@ -95,7 +98,16 @@ func (this Server) Listen(c ctx.C, addr string) (net.Addr, error) {
 			},
 		}
 		err := s.Serve(l)
-		log.Warnf(c, "listen(%q) %v", addr, err)
+		if err != nil {
+			log.Warnf(c, "listen(%q) %v", addr, err)
+		}
+	}()
+
+	go func() {
+		<-shutdown.Started()
+		c, cf := ctx.WithTimeout(c, 30*time.Second)
+		defer cf()
+		_ = s.Shutdown(c)
 	}()
 
 	// blocks until either an error, or the first Accept() call happen
@@ -114,7 +126,7 @@ func (this *listener) Accept() (net.Conn, error) {
 	return this.Listener.Accept()
 }
 
-func (this *Server) OnRequest(pattern string, f func(c ctx.C, in []byte, r *http.Request) ([]byte, error)) {
+func (this *Server) HandleRequest(pattern string, f func(c ctx.C, in []byte, r *http.Request) ([]byte, error)) {
 	this.mux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
 		c := r.Context()
 		out, err := func() ([]byte, error) {

@@ -57,6 +57,9 @@ var defLogger = func(at Line) {
 }
 
 func getLogger(c ctx.C) loggerValue {
+	if c == nil {
+		return loggerValue{func() {}, defLogger}
+	}
 	logger, ok := c.Value(loggerKey{}).(loggerValue)
 	if !ok {
 		return loggerValue{func() {}, defLogger}

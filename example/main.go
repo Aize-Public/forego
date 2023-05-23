@@ -1,11 +1,28 @@
 package main
 
 import (
+	"os"
+
 	"github.com/Aize-Public/forego/ctx"
 	"github.com/Aize-Public/forego/ctx/log"
+	"github.com/Aize-Public/forego/http"
+	"github.com/Aize-Public/forego/shutdown"
 )
 
 func main() {
-	c := ctx.TODO()
-	log.Debugf(c, "init")
+	c, cf := ctx.Background()
+	log.Warnf(c, "init")
+	defer log.Warnf(c, "exit")
+
+	s := http.NewServer(c)
+
+	addr, err := s.Listen(c, "127.0.0.1:0")
+	if err != nil {
+		log.Errorf(c, "err")
+		os.Exit(-1)
+	}
+
+	log.Infof(c, "listening %v", addr.String())
+
+	shutdown.WaitForSignal(c, cf)
 }

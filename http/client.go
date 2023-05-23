@@ -17,11 +17,10 @@ import (
 type Client struct {
 	cli     http.Client
 	BaseUrl *url.URL
+	// TODO do we need a "proxy" host which will be used instead of the url host?
 }
 
-var DefaultClient = Client{
-	//BaseUrl: &url.URL{Scheme: "http", Host: "127.0.0.1"},
-}
+var DefaultClient = Client{}
 
 func (this Client) Get(c ctx.C, url string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(c, "GET", url, nil)

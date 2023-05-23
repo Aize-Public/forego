@@ -12,7 +12,7 @@ type Doable interface {
 	Do(ctx.C) error
 }
 
-func API[T Doable](c ctx.C, s *Server, obj T) error {
+func RegisterAPI[T Doable](c ctx.C, s *Server, obj T) error {
 	handler, err := api.NewServer(c, obj)
 	if err != nil {
 		return err
@@ -45,7 +45,7 @@ func API[T Doable](c ctx.C, s *Server, obj T) error {
 	}
 
 	for _, u := range handler.URLs() {
-		s.OnRequest(u.Path, f)
+		s.HandleRequest(u.Path, f)
 	}
 	return nil
 }

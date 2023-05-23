@@ -34,7 +34,7 @@ func TestAPI(t *testing.T) {
 	c := test.C(t)
 
 	s := http.NewServer(c)
-	err := http.API(c, s, &Inc{
+	err := http.RegisterAPI(c, s, &Inc{
 		State: map[string]int{},
 	})
 	test.NoError(t, err)
@@ -50,11 +50,12 @@ func TestAPI(t *testing.T) {
 		test.ContainsJSON(t, res, `:3,`)
 	}
 
+	// we must use the network to test the client
 	addr, err := s.Listen(c, "127.0.0.1:0")
 	test.NoError(t, err)
 
 	cli := http.Client{
-		BaseUrl: &url.URL{Scheme: "http", Host: addr.String()},
+		BaseUrl: &url.URL{Scheme: "http", Host: addr.String()}, // this will be used to build relative urls from
 	}
 
 	{
