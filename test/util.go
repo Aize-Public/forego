@@ -49,12 +49,12 @@ func (res res) prefix(f string, args ...any) res {
 }
 
 // expect true
-func (res res) true(t *testing.T, f ...any) {
+func (res res) true(t *testing.T) {
 	t.Helper()
 	if res.succeed {
-		t.Logf("OK %s", res.msg)
+		OK(t, "%s", res.msg)
 	} else {
-		t.Fatalf("FAIL %s", res.msg)
+		Fail(t, "FAIL %s", res.msg)
 	}
 }
 
@@ -62,8 +62,8 @@ func (res res) true(t *testing.T, f ...any) {
 func (res res) false(t *testing.T) {
 	t.Helper()
 	if res.succeed {
-		t.Fatalf("FAIL %s", res.msg)
+		Fail(t, "%s", res.msg)
 	} else {
-		t.Logf("OK %s", res.msg)
+		OK(t, "%s", res.msg)
 	}
 }

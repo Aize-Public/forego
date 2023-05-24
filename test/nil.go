@@ -21,9 +21,9 @@ func NotNil(t *testing.T, obj any) {
 func NoError(t *testing.T, err error) {
 	t.Helper()
 	if isNil(err).succeed {
-		t.Logf("OK no error %s", ast.Assignment(0, 1))
+		OK(t, "no error %s", ast.Assignment(0, 1))
 	} else {
-		t.Fatalf("FAIL %v", err)
+		Fail(t, "%v", err)
 	}
 }
 

@@ -6,11 +6,24 @@ import (
 	"github.com/Aize-Public/forego/utils/ast"
 )
 
+var ok = "\033[32m✔\033[0m"
+var fail = "\033[91m✗\033[0m"
+
+func OK(t *testing.T, f string, args ...any) {
+	t.Helper()
+	t.Logf(ok+" "+f, args...)
+}
+
+func Fail(t *testing.T, f string, args ...any) {
+	t.Helper()
+	t.Fatalf(fail+" "+f, args...)
+}
+
 func Assert(t *testing.T, cond bool) {
 	t.Helper()
 	if cond {
-		t.Logf("ok %s", ast.Assignment(0, 1))
+		OK(t, "%s", ast.Assignment(0, 1))
 	} else {
-		t.Fatalf("fail %s", ast.Assignment(0, 1))
+		Fail(t, "%s", ast.Assignment(0, 1))
 	}
 }

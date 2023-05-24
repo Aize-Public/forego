@@ -3,18 +3,28 @@ package test
 import (
 	"fmt"
 	"testing"
+
+	"github.com/Aize-Public/forego/utils/ast"
 )
 
 // compare using "%#v"
 func EqualsGo(t *testing.T, expect, got any) {
 	t.Helper()
-	equalGo(expect, got).true(t)
+	if equalGo(expect, got).succeed {
+		OK(t, "%s == %s", ast.Assignment(0, 1), ast.Assignment(0, 2))
+	} else {
+		Fail(t, "%s == %s", ast.Assignment(0, 1), ast.Assignment(0, 2))
+	}
 }
 
 // compare using "%#v"
 func NotEqualsGo(t *testing.T, expect, got any) {
 	t.Helper()
-	equalGo(expect, got).false(t)
+	if equalGo(expect, got).succeed {
+		Fail(t, "%s != %s", ast.Assignment(0, 1), ast.Assignment(0, 2))
+	} else {
+		OK(t, "%s != %s", ast.Assignment(0, 1), ast.Assignment(0, 2))
+	}
 }
 
 func equalGo(expect, got any) res {
