@@ -10,7 +10,7 @@ import (
 )
 
 func TestCall(t *testing.T) {
-	c := test.C(t)
+	c := test.Context(t)
 
 	s := http.NewServer(c)
 	http.CallHandler{

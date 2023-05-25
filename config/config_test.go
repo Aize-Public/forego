@@ -8,7 +8,7 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	c := test.C(t)
+	c := test.Context(t)
 
 	cfg := config.Must(c, struct {
 		Listen string `config:"listen,default=:8080"`

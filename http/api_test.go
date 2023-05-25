@@ -31,7 +31,7 @@ func (this *Inc) Do(c ctx.C) error {
 }
 
 func TestAPI(t *testing.T) {
-	c := test.C(t)
+	c := test.Context(t)
 
 	s := http.NewServer(c)
 	err := http.RegisterAPI(c, s, &Inc{

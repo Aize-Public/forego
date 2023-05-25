@@ -10,7 +10,7 @@ import (
 )
 
 func TestServer(t *testing.T) {
-	c := test.C(t)
+	c := test.Context(t)
 	var stats []http.Stat
 
 	s := http.NewServer(c)

@@ -13,7 +13,7 @@ func lib(c ctx.C) {
 }
 
 func TestAll(t *testing.T) {
-	c := test.C(t)
+	c := test.Context(t)
 	t.Logf("before")
 	lib(c)
 	t.Logf("after")

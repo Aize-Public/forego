@@ -14,7 +14,7 @@ func TestReadAll(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
 	}
-	c := test.C(t)
+	c := test.Context(t)
 
 	t.Run("timeout", func(t *testing.T) {
 		r, w := io.Pipe()

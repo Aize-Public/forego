@@ -42,6 +42,9 @@ func WithTag(c C, key string, val any) C {
 
 // scan the chain of context for tags, call the function on each of them, parents first
 func RangeTag(c C, fn func(k string, json JSON) error) error {
+	if c == nil {
+		return nil
+	}
 	v := c.Value(tagRangeFunc(fn))
 	switch v := v.(type) {
 	case nil:

@@ -6,6 +6,11 @@ import (
 	"testing"
 )
 
+func Contains(t *testing.T, str, pattern string) {
+	t.Helper()
+	contains(str, pattern).true(t)
+}
+
 // check if the json of obj contains pattern
 func ContainsJSON(t *testing.T, obj any, pattern string) {
 	t.Helper()
@@ -22,7 +27,7 @@ func NotContainsJSON(t *testing.T, obj any, pattern string) {
 
 func contains(s string, pattern string) res {
 	if strings.Contains(s, pattern) {
-		return res{true, s}
+		return res{true, fmt.Sprintf("%s", s)}
 	} else {
 		return res{false, fmt.Sprintf("%q not in %q", pattern, s)}
 	}

@@ -13,7 +13,12 @@ type Store struct {
 }
 
 type Get struct {
-	R api.Request `url:"/api/v1/get"`
+	any `url:"/api/v1/get" doc:"yooo hooo"`
+
+	XFF string `api:"header,X-Forwarded-For"`
+	UID string `api:"auth,required"`
+
+	//R           api.Request `url:"/api/v1/get"`
 
 	Store *Store
 

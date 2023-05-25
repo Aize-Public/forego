@@ -6,17 +6,17 @@ import (
 	"github.com/Aize-Public/forego/utils/ast"
 )
 
-var ok = "\033[32m✔\033[0m"
-var fail = "\033[91m✗\033[0m"
+var ok = "  ✔ "
+var fail = " ❌ "
 
 func OK(t *testing.T, f string, args ...any) {
 	t.Helper()
-	t.Logf(ok+" "+f, args...)
+	t.Logf(ok+f, args...)
 }
 
 func Fail(t *testing.T, f string, args ...any) {
 	t.Helper()
-	t.Fatalf(fail+" "+f, args...)
+	t.Fatalf(fail+f, args...)
 }
 
 func Assert(t *testing.T, cond bool) {

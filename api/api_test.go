@@ -11,7 +11,7 @@ import (
 )
 
 func TestAPI(t *testing.T) {
-	c := test.C(t)
+	c := test.Context(t)
 	alice := UID("alice")
 
 	t.Logf("handler...")

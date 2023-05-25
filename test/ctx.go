@@ -9,7 +9,7 @@ import (
 	"github.com/Aize-Public/forego/ctx/log"
 )
 
-func C(t *testing.T) ctx.C {
+func Context(t *testing.T) ctx.C {
 	t.Helper()
 	c := context.Background()
 	c = ctx.WithTag(c, "test", t.Name())

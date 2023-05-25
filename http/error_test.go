@@ -10,7 +10,7 @@ import (
 )
 
 func TestError(t *testing.T) {
-	c := test.C(t)
+	c := test.Context(t)
 	{
 		err := io.EOF
 		test.EqualsGo(t, 999, http.ErrorCode(err, 999))
