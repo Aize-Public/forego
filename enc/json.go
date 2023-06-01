@@ -9,8 +9,7 @@ import (
 type JSON struct {
 }
 
-var _ Encoder = JSON{}
-var _ Decoder = JSON{}
+var _ Codec = JSON{}
 
 func (this JSON) Encode(c ctx.C, n Node) []byte {
 	j, err := json.Marshal(n)

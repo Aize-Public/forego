@@ -36,7 +36,7 @@ func (this List) String() string {
 	return "[" + strings.Join(list, ", ") + "]"
 }
 
-func (this List) expandInto(c ctx.C, codec Codec, path Path, into reflect.Value) error {
+func (this List) expandInto(c ctx.C, handler Handler, path Path, into reflect.Value) error {
 	switch into.Kind() {
 	case reflect.Interface:
 		into.Set(reflect.ValueOf(this.native()))
@@ -46,7 +46,7 @@ func (this List) expandInto(c ctx.C, codec Codec, path Path, into reflect.Value)
 		slice := reflect.MakeSlice(into.Type(), len(this), len(this))
 		for i := 0; i < len(this); i++ {
 			ev := slice.Index(i)
-			err := this.expandInto(c, codec, path.Append(i), ev.Addr())
+			err := this.expandInto(c, handler, path.Append(i), ev.Addr())
 			if err != nil {
 				return err
 			}

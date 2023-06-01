@@ -52,7 +52,7 @@ func TestJSON(t *testing.T) {
 
 	t.Run("pairs", func(t *testing.T) {
 		checkLeft(`{}`, enc.Pairs{})
-		checkLeft(`{"b":1,"a":2,"":null}`, enc.Pairs{{"b", enc.Number(1)}, {"a", enc.Number(2)}, {"", enc.Nil{}}})
+		checkLeft(`{"b":1,"a":2,"":null}`, enc.Pairs{{"b", "b", enc.Number(1)}, {"a", "a", enc.Number(2)}, {"", "", enc.Nil{}}})
 	})
 
 	t.Run("lists", func(t *testing.T) {

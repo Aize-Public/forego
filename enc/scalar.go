@@ -23,7 +23,7 @@ func (this String) String() string {
 	return fmt.Sprintf("%q", string(this))
 }
 
-func (this String) expandInto(c ctx.C, codec Codec, path Path, into reflect.Value) error {
+func (this String) expandInto(c ctx.C, handler Handler, path Path, into reflect.Value) error {
 	//log.Debugf(c, "%v.expandInto(%#v)", this, into)
 	switch into.Kind() {
 	case reflect.String:
@@ -37,6 +37,7 @@ func (this String) expandInto(c ctx.C, codec Codec, path Path, into reflect.Valu
 	return nil
 }
 
+// NOTE(oha) do we need to split into Integers and Floats?
 type Number float64
 
 var _ Node = Number(1.0)
@@ -53,7 +54,7 @@ func (this Number) String() string {
 	return fmt.Sprintf("%v", float64(this))
 }
 
-func (this Number) expandInto(c ctx.C, codec Codec, path Path, into reflect.Value) error {
+func (this Number) expandInto(c ctx.C, handler Handler, path Path, into reflect.Value) error {
 	//log.Debugf(c, "%v.expandInto(%#v)", this, into)
 	switch into.Kind() {
 	case reflect.Float64:
@@ -91,7 +92,7 @@ func (this Bool) String() string {
 	}
 }
 
-func (this Bool) expandInto(c ctx.C, codec Codec, path Path, into reflect.Value) error {
+func (this Bool) expandInto(c ctx.C, handler Handler, path Path, into reflect.Value) error {
 	//log.Debugf(c, "%v.expandInto(%#v)", this, into)
 	switch into.Kind() {
 	case reflect.Bool:
