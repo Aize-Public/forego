@@ -10,21 +10,13 @@ import (
 // compare using "%#v"
 func EqualsGo(t *testing.T, expect, got any) {
 	t.Helper()
-	if equalGo(expect, got).succeed {
-		OK(t, "%s == %s: %#v", ast.Assignment(0, 1), ast.Assignment(0, 2), expect)
-	} else {
-		Fail(t, "%#v == %#v", expect, got)
-	}
+	equalGo(expect, got).prefix("%s == %s", ast.Assignment(0, 1), ast.Assignment(0, 2)).true(t)
 }
 
 // compare using "%#v"
 func NotEqualsGo(t *testing.T, expect, got any) {
 	t.Helper()
-	if equalGo(expect, got).succeed {
-		Fail(t, "%s != %s", ast.Assignment(0, 1), ast.Assignment(0, 2))
-	} else {
-		OK(t, "%s != %s", ast.Assignment(0, 1), ast.Assignment(0, 2))
-	}
+	equalGo(expect, got).prefix("%s == %s", ast.Assignment(0, 1), ast.Assignment(0, 2)).false(t)
 }
 
 func equalGo(expect, got any) res {
@@ -40,21 +32,13 @@ func equalGo(expect, got any) res {
 // compare using JSON
 func EqualsJSON(t *testing.T, expect, got any) {
 	t.Helper()
-	if equalJSON(expect, got).succeed {
-		OK(t, "%s == %s: %#v", ast.Assignment(0, 1), ast.Assignment(0, 2), expect)
-	} else {
-		Fail(t, "%#v == %#v", expect, got)
-	}
+	equalJSON(expect, got).prefix("%s == %s", ast.Assignment(0, 1), ast.Assignment(0, 2)).true(t)
 }
 
 // compare using JSON
 func NotEqualsJSON(t *testing.T, expect, got any) {
 	t.Helper()
-	if equalJSON(expect, got).succeed {
-		Fail(t, "%s != %s", ast.Assignment(0, 1), ast.Assignment(0, 2))
-	} else {
-		OK(t, "%s != %s", ast.Assignment(0, 1), ast.Assignment(0, 2))
-	}
+	equalJSON(expect, got).prefix("%s == %s", ast.Assignment(0, 1), ast.Assignment(0, 2)).false(t)
 }
 
 func equalJSON(expect, got any) res {
