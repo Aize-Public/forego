@@ -127,7 +127,7 @@ func (this Server[T]) Recv(c ctx.C, req ServerRequest) (T, error) {
 	v := ptrV.Elem()
 	for i, fv := range this.init {
 		v.Field(i).Set(fv)
-		log.Debugf(c, "init %T.%v = %#v", this.typ, this.typ.Field(i).Name, fv)
+		//log.Debugf(c, "init %T.%v = %#v", this.typ, this.typ.Field(i).Name, fv)
 	}
 	for _, f := range this.in {
 		fv := v.Field(f.i)
