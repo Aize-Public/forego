@@ -1,6 +1,7 @@
 package http
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 
@@ -13,14 +14,22 @@ type Doable interface {
 	Do(ctx.C) error
 }
 
-func RegisterAPI[T Doable](c ctx.C, s *Server, obj T) error {
+func (s *Server) RegisterAPI(c ctx.C, obj Doable) error {
 	handler, err := api.NewServer(c, obj)
 	if err != nil {
 		return err
 	}
 	f := func(c ctx.C, in []byte, r *http.Request) ([]byte, error) {
 		req := &api.JSON{}
-		err := json.Unmarshal(in, &req.Data)
+		if r.Body != nil {
+			err := req.ReadFrom(c, bytes.NewBuffer(in))
+			if err != nil {
+				return nil, ctx.NewErrorf(c, "can't read request body: %v", err)
+			}
+			defer r.Body.Close()
+		} else {
+			log.Infof(c, "can/t get body: %v", err)
+		}
 		// TODO auth
 
 		obj, err := handler.Recv(c, req)

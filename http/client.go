@@ -111,16 +111,12 @@ func (this Client) API(c ctx.C, obj Doable) error {
 			log.Debugf(c, "204 no response")
 			return nil
 		case 200:
-			j, err = io.ReadAll(res.Body)
+			err := data.ReadFrom(c, res.Body)
 			if err != nil {
 				return ctx.NewErrorf(c, "can't read response: %w", err)
 			}
 			res.Body.Close()
 			log.Debugf(c, "client[%T].Recv() %s", obj, j)
-			err = json.Unmarshal(j, &data.Data)
-			if err != nil {
-				return ctx.NewErrorf(c, "can't unmarshal response: %w", err)
-			}
 			return h.Recv(c, data, obj)
 		default:
 			return ctx.NewErrorf(c, "can't connect: %s", res.Status)

@@ -64,7 +64,7 @@ func (this Pairs) Find(name string) Node {
 	return nil
 }
 
-func (this Pairs) expandInto(c ctx.C, handler Handler, path Path, into reflect.Value) error {
+func (this Pairs) unmarshalInto(c ctx.C, handler Handler, path Path, into reflect.Value) error {
 	panic("NIY")
 }
 

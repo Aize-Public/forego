@@ -23,6 +23,7 @@ func empty(obj any) res {
 	v := reflect.ValueOf(obj)
 	switch v.Kind() {
 	case reflect.Pointer:
+		// TODO(oha): is this a good idea? if we pass a io.Reader it will say true even if it contains no data...
 		if v.IsNil() {
 			return res{true, fmt.Sprintf("%T is nil", obj)}
 		} else {

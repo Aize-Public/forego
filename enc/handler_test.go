@@ -10,12 +10,12 @@ import (
 func TestExpand(t *testing.T) {
 	c := test.Context(t)
 
-	// expand into any
+	// Unmarshal into any
 	t.Run("any", func(t *testing.T) {
 		check := func(n enc.Node, obj any) {
 			t.Logf("%+v", n)
 			var x any
-			err := enc.Handler{}.Expand(c, n, &x)
+			err := enc.Handler{}.Unmarshal(c, n, &x)
 			test.NoError(t, err)
 			test.EqualsGo(t, obj, x)
 		}
@@ -45,7 +45,7 @@ func TestExpand(t *testing.T) {
 		check := func(n enc.Node, obj any) {
 			t.Logf("%+v", n)
 			var x map[string]any
-			err := enc.Handler{}.Expand(c, n, &x)
+			err := enc.Unmarshal(c, n, &x)
 			test.NoError(t, err)
 			test.EqualsGo(t, obj, x)
 		}
@@ -73,7 +73,7 @@ func TestConflate(t *testing.T) {
 		V: []any{nil, 2, true},
 	}
 
-	n, err := enc.Handler{}.Conflate(c, x)
+	n, err := enc.Marshal(c, x)
 	test.NoError(t, err)
 
 	test.EqualsJSON(t, enc.Pairs{ // NOTE(oha): since we conflate a struct, we preserve the order of the fields using enc.Pairs
@@ -85,4 +85,9 @@ func TestConflate(t *testing.T) {
 			enc.Bool(true),
 		}},
 	}, n)
+	{
+		n, err := enc.Marshal(c, []string{"foo", "bar"})
+		test.NoError(t, err)
+		t.Logf("%v", n)
+	}
 }

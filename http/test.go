@@ -1,10 +1,9 @@
 package http
 
 import (
-	"encoding/json"
-
 	"github.com/Aize-Public/forego/api"
 	"github.com/Aize-Public/forego/ctx"
+	"github.com/Aize-Public/forego/enc"
 )
 
 // TODO
@@ -24,7 +23,8 @@ func TestAPI[T Doable, UID any](c ctx.C, uid UID, obj T) error {
 	}
 
 	{
-		data.UID, err = json.Marshal(uid)
+		data.UID, err = enc.Marshal(c, uid)
+		//data.UID, err = json.Marshal(uid)
 		if err != nil {
 			return ctx.NewErrorf(c, "can't marshal UID: %w", err)
 		}

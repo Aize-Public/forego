@@ -1,12 +1,12 @@
 package api_test
 
 import (
-	"encoding/json"
 	"strings"
 	"testing"
 
 	"github.com/Aize-Public/forego/api"
 	"github.com/Aize-Public/forego/ctx"
+	"github.com/Aize-Public/forego/enc"
 	"github.com/Aize-Public/forego/test"
 )
 
@@ -33,7 +33,8 @@ func TestAPI(t *testing.T) {
 	test.NotEmpty(t, data.Data)
 
 	t.Logf("auth...")
-	data.UID, _ = json.Marshal(alice)
+	data.UID, _ = enc.Marshal(c, alice)
+	//data.UID, _ = json.Marshal(alice)
 
 	{
 		t.Logf("server recv...")

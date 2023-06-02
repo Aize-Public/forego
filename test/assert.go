@@ -22,8 +22,8 @@ func Fail(t *testing.T, f string, args ...any) {
 func Assert(t *testing.T, cond bool) {
 	t.Helper()
 	if cond {
-		OK(t, "%s", ast.Assignment(0, 1))
+		OK(t, "%s", stringy{ast.Assignment(0, 1)})
 	} else {
-		Fail(t, "%s", ast.Assignment(0, 1))
+		Fail(t, "%s", stringy{ast.Assignment(0, 1)})
 	}
 }

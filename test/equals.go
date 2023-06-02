@@ -10,13 +10,13 @@ import (
 // compare using "%#v"
 func EqualsGo(t *testing.T, expect, got any) {
 	t.Helper()
-	equalGo(expect, got).prefix("%s == %s", ast.Assignment(0, 1), ast.Assignment(0, 2)).true(t)
+	equalGo(expect, got).prefix("%s == %s", Quote(ast.Assignment(0, 1)), Quote(ast.Assignment(0, 2))).true(t)
 }
 
 // compare using "%#v"
 func NotEqualsGo(t *testing.T, expect, got any) {
 	t.Helper()
-	equalGo(expect, got).prefix("%s == %s", ast.Assignment(0, 1), ast.Assignment(0, 2)).false(t)
+	equalGo(expect, got).prefix("%s == %s", Quote(ast.Assignment(0, 1)), Quote(ast.Assignment(0, 2))).false(t)
 }
 
 func equalGo(expect, got any) res {
@@ -25,7 +25,7 @@ func equalGo(expect, got any) res {
 	if e == g {
 		return res{true, e}
 	} else {
-		return res{false, fmt.Sprintf("%s != %s", e, g)}
+		return res{false, fmt.Sprintf("%s != %s", Quote(e), Quote(g))}
 	}
 }
 

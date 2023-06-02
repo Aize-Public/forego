@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Aize-Public/forego/ctx"
+	"github.com/Aize-Public/forego/ctx/log"
 )
 
 // unordered map
@@ -37,21 +38,22 @@ func (this Map) GoString() string {
 	return "enc.Map{" + strings.Join(p, ", ") + "}"
 }
 
-func (this Map) expandInto(c ctx.C, handler Handler, path Path, into reflect.Value) error {
+func (this Map) unmarshalInto(c ctx.C, handler Handler, path Path, into reflect.Value) error {
 	switch into.Kind() {
 	case reflect.Map:
+		log.Debugf(c, "%T.expandInto() => map", this)
 		t := into.Type()
 		intokt := t.Key()
 		intovt := t.Elem()
 		mv := reflect.MakeMap(t)
 		for k, v := range this {
 			kv := reflect.New(intokt)
-			err := handler.expand(c, path.Append("#key"), String(k), kv.Interface())
+			err := handler.unmarshal(c, path.Append("#key"), String(k), kv.Interface())
 			if err != nil {
 				return err
 			}
 			vv := reflect.New(intovt)
-			err = handler.expand(c, path.Append("#val"), v, vv.Interface())
+			err = handler.unmarshal(c, path.Append("#val"), v, vv.Interface())
 			if err != nil {
 				return err
 			}
@@ -68,10 +70,10 @@ func (this Map) expandInto(c ctx.C, handler Handler, path Path, into reflect.Val
 			ft := vt.Field(i)
 			if ft.IsExported() {
 				tag := parseTag(ft)
-				seen[tag.Name] = true
-				v, ok := this[tag.Name]
+				seen[tag.JSON] = true
+				v, ok := this[tag.JSON]
 				if ok {
-					err := handler.expand(c, path.Append(tag.Name), v, fv.Addr().Interface())
+					err := handler.unmarshal(c, path.Append(tag.Name), v, fv.Addr().Interface())
 					if err != nil {
 						return err
 					}

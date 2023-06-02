@@ -8,6 +8,7 @@ import (
 
 	"github.com/Aize-Public/forego/api"
 	"github.com/Aize-Public/forego/ctx"
+	"github.com/Aize-Public/forego/ctx/log"
 	"github.com/Aize-Public/forego/http"
 	"github.com/Aize-Public/forego/test"
 )
@@ -22,6 +23,7 @@ type Inc struct {
 }
 
 func (this *Inc) Do(c ctx.C) error {
+	log.Debugf(c, "%+v.Do()", *this)
 	if this.Amount < 0 {
 		return http.NewErrorf(c, 400, "amount can't be negative")
 	}
@@ -34,7 +36,7 @@ func TestAPI(t *testing.T) {
 	c := test.Context(t)
 
 	s := http.NewServer(c)
-	err := http.RegisterAPI(c, s, &Inc{
+	err := s.RegisterAPI(c, &Inc{
 		State: map[string]int{},
 	})
 	test.NoError(t, err)
@@ -47,7 +49,7 @@ func TestAPI(t *testing.T) {
 		res := w.Buf.String()
 		test.Assert(t, w.Code == 200)
 		t.Logf("res: %s", res)
-		test.ContainsJSON(t, res, `:3,`)
+		test.Contains(t, res, `:3,`)
 	}
 
 	// we must use the network to test the client

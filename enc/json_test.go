@@ -67,3 +67,60 @@ func TestJSON(t *testing.T) {
 		check(`{"l":[]}`, enc.Map{"l": enc.List{}})
 	})
 }
+
+func TestRawNode(t *testing.T) {
+	c := test.Context(t)
+
+	t.Run("enc.Node", func(t *testing.T) {
+		var x struct {
+			S string   `json:"s"`
+			X enc.Node `json:"x"` // you can use enc.Node to have access to the interstitial similarly to json.RawMessage
+		}
+
+		in := enc.Map{
+			"s": enc.String("foo"),
+			"x": enc.Map{
+				"ok": enc.Bool(true),
+			},
+		}
+
+		err := enc.Unmarshal(c, in, &x)
+		test.NoError(t, err)
+		test.EqualsGo(t, enc.Map{"ok": enc.Bool(true)}, x.X)
+		t.Logf("x: %+v", x)
+	})
+
+	t.Run("enc.Map", func(t *testing.T) {
+		var x struct {
+			S string  `json:"s"`
+			X enc.Map `json:"x"` // you can use enc.Map to force the interstitial to be an object
+		}
+
+		in := enc.Map{
+			"s": enc.String("foo"),
+			"x": enc.Map{
+				"ok": enc.Bool(true),
+			},
+		}
+
+		err := enc.Unmarshal(c, in, &x)
+		test.NoError(t, err)
+		test.EqualsGo(t, enc.Map{"ok": enc.Bool(true)}, x.X)
+		t.Logf("x: %+v", x)
+	})
+
+	t.Run("enc.Map FAIL", func(t *testing.T) {
+		var x struct {
+			S string  `json:"s"`
+			X enc.Map `json:"x"` // you can use enc.Map to force the interstitial to be an object
+		}
+
+		in := enc.Map{
+			"s": enc.String("foo"),
+			"x": enc.String("bar"),
+		}
+
+		err := enc.Unmarshal(c, in, &x)
+		test.Error(t, err)
+	})
+}

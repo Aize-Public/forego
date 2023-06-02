@@ -3,7 +3,9 @@ package test
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/Aize-Public/forego/utils/ast"
 )
@@ -66,4 +68,39 @@ func (res res) false(t *testing.T) {
 	} else {
 		OK(t, "%s", res.msg)
 	}
+}
+
+// using this will make the string representation more human
+type stringy struct {
+	any
+}
+
+func (this stringy) String() string {
+	switch v := this.any.(type) {
+	case json.RawMessage:
+		return string(v)
+	case []byte:
+		if utf8.Valid(v) {
+			return Quote(string(v))
+		} else {
+			return fmt.Sprintf("%#v", v)
+		}
+	case string:
+		return Quote(v)
+	case fmt.Stringer:
+		return Quote(v.String())
+	default:
+		return fmt.Sprintf("%#v", v)
+	}
+}
+
+func Quote(s string) string {
+	r := strings.NewReplacer(
+		"`", "\\`",
+		`\`, `\\`,
+		"\t", `\t`,
+		"\r", `\r`,
+		"\n", `\v`,
+	)
+	return "`" + r.Replace(s) + "`"
 }

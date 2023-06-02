@@ -23,17 +23,36 @@ things like `CorrelationID`, `auth` or any context which will help debugging fro
 
 It also make it coherent when using other libraries, since they will still carry over the context.
 
-All logging is `JSON` lines
+All logging is `JSON` lines, e.g.:
+
+```java
+{"level":"debug","src":"github.com/Aize-Public/forego/http/server.go:83","time":"2023-06-01T07:18:31.007411033+02:00","message":"listening to :8080","tags":{"service":"viewer"}}
+```
+
+May be wise to use a log viewer like `https://github.com/ohait/jl`   
 
 ## `test`
 
 Having a good testing library, means less to write, and better results.
 
-all the tests will generate a log message when they succeed, most of the time this is enough to understand the test.
+All the tests will generate a log message when they succeed based on the arguments, most of the time this is enough to understand the test.
+
+E.g. with this code:
+
+```go
+  err := foo(123)
+  test.NoError(t, err)
+```
+
+The following log message is generated:   
+
+```go
+    my_test.go:123 ok: foo(123)
+```
 
 ### `ast` parsing
 
-Some functions like `test.NoError()` and `test.Assert()` will log the code which they have been invoked with. e.g.:
+Some functions like `test.NoError()` and `test.Assert()` will log the code which they have been invoked with. E.g.:
 
 ```go
   func TestX(t *testing.T) {
@@ -49,10 +68,15 @@ ok: everything > 7*3
 
 In the case of error, it will print what was the function assigning to the error
 
+
+
 ## `api`
 
 Framework to automatically create bindings and documentation for APIs:
-* no more test of bindings, just test the logic
+* no more test of bindings, just test the business logic
 * OpenAPI automatically generated
-* tight integration with http, ws and other streaming services
+* tight integration with http, WebSocket and other streaming libraries
 * simple and no boiler plate
+
+TODO
+

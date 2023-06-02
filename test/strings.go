@@ -27,8 +27,8 @@ func NotContainsJSON(t *testing.T, obj any, pattern string) {
 
 func contains(s string, pattern string) res {
 	if strings.Contains(s, pattern) {
-		return res{true, fmt.Sprintf("%s", s)}
+		return res{true, Quote(s)}
 	} else {
-		return res{false, fmt.Sprintf("%q not in %q", pattern, s)}
+		return res{false, fmt.Sprintf("%s not in %s", Quote(pattern), Quote(s))}
 	}
 }

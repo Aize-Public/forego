@@ -6,20 +6,16 @@ import (
 	"reflect"
 
 	"github.com/Aize-Public/forego/ctx"
+	"github.com/Aize-Public/forego/enc"
 )
 
 // implementation for all the client/server request/responses using json
 // Note(oha): the object is not goroutine safe, but it's not expected to be
 type JSON struct {
-	Data JSONMap
-	UID  json.RawMessage // used by ServerRequest.Auth()
-}
-
-type JSONMap map[string]json.RawMessage
-
-func (m JSONMap) String() string {
-	j, _ := json.Marshal(m)
-	return string(j)
+	h    enc.Handler
+	j    enc.JSON
+	Data enc.Map
+	UID  enc.Node
 }
 
 var _ ClientRequest = &JSON{}
@@ -37,41 +33,55 @@ func (this *JSON) ReadFrom(c ctx.C, r io.Reader) error {
 	if err != nil {
 		return ctx.NewErrorf(c, "can't read api.JSON: %w", err)
 	}
-	return json.Unmarshal(data, &this.Data)
+	if len(data) == 0 {
+		this.Data = enc.Map{}
+		return nil
+	}
+	n, err := enc.JSON{}.Decode(c, data)
+	if err != nil {
+		return err
+	}
+	switch n := n.(type) {
+	case enc.Map:
+		this.Data = n
+	default:
+		return ctx.NewErrorf(c, "expected object, got %s", data)
+	}
+	return nil
 }
 
 func (this *JSON) Auth(c ctx.C, into reflect.Value, required bool) error {
-	if len(this.UID) == 0 || string(this.UID) == "null" {
+	if (this.UID == nil || this.UID == enc.Nil{}) {
 		if required {
 			return ctx.NewErrorf(c, "Auth required")
 		}
 		return nil
 	}
-	return json.Unmarshal(this.UID, into.Addr().Interface())
+	return this.h.Unmarshal(c, this.UID, into.Addr().Interface())
 }
 
 func (this *JSON) Marshal(c ctx.C, name string, from reflect.Value) error {
 	if this.Data == nil {
-		this.Data = map[string]json.RawMessage{}
+		this.Data = enc.Map{}
 	}
-	j, err := json.Marshal(from.Interface())
+	n, err := this.h.Marshal(c, from.Interface())
 	if err != nil {
 		return ctx.NewErrorf(c, "can't Marshal %q: %w", name, err)
 	}
-	//log.Debugf(c, "json[%q]=%s", name, j)
-	this.Data[name] = j
+	this.Data[name] = n
 	return nil
 }
 
 func (this *JSON) Unmarshal(c ctx.C, name string, into reflect.Value) error {
 	if this.Data == nil {
-		this.Data = map[string]json.RawMessage{}
+		this.Data = enc.Map{}
 	}
-	j, ok := this.Data[name]
+	n, ok := this.Data[name]
 	if !ok {
 		return nil
 	}
-	err := json.Unmarshal(j, into.Addr().Interface())
+	err := this.h.Unmarshal(c, n, into.Addr().Interface())
+	//err := json.Unmarshal(j, into.Addr().Interface())
 	if err != nil {
 		return ctx.NewErrorf(c, "can't Unmarshal %q: %w", name, err)
 	}

@@ -9,23 +9,30 @@ import (
 	"github.com/Aize-Public/forego/ctx/log"
 )
 
-// generic object that do the Expand()/Conflate()
+// generic object that do the Unmarshal()/Conflate()
 type Handler struct {
 	Factory map[reflect.Type]func(c ctx.C, n Node) (any, error)
 
-	// called if a field is present in the NodeTree but there is no mapping on the object it's expanded into
+	// called if a field is present in the NodeTree but there is no mapping on the object it's unmarshaled into
 	UnhandledFields func(c ctx.C, path Path, n Node) error
 }
 
-func (this Handler) Expand(c ctx.C, n Node, into any) error {
-	v := reflect.ValueOf(into)
-	if v.Kind() != reflect.Pointer {
-		return ctx.NewErrorf(c, "expected pointer to expand into, got: %T", into)
-	}
-	return n.expandInto(c, this, Path{}, v.Elem())
+func Unmarshal(c ctx.C, n Node, into any) error {
+	return Handler{}.Unmarshal(c, n, into)
 }
 
-func (this Handler) expand(c ctx.C, path Path, from Node, into any) error {
+func (this Handler) Unmarshal(c ctx.C, n Node, into any) error {
+	if n == nil {
+		n = Nil{}
+	}
+	v := reflect.ValueOf(into)
+	if v.Kind() != reflect.Pointer {
+		return ctx.NewErrorf(c, "expected pointer to unmarshal into, got: %T", into)
+	}
+	return n.unmarshalInto(c, this, Path{}, v.Elem())
+}
+
+func (this Handler) unmarshal(c ctx.C, path Path, from Node, into any) error {
 	switch into := into.(type) {
 	case *time.Time: // override from default go
 		switch from := from.(type) {
@@ -47,7 +54,7 @@ func (this Handler) expand(c ctx.C, path Path, from Node, into any) error {
 		j, _ := json.Marshal(from) // we must go back to the json
 		return into.UnmarshalJSON(j)
 	case *Node:
-		log.Warnf(c, "WTF?")
+		// NOTE(oha) if a struct has a field of type enc.Node, we drop the data there (similarly to json.RawMessage)
 		*into = from
 		return nil
 	}
@@ -83,10 +90,10 @@ func (this Handler) expand(c ctx.C, path Path, from Node, into any) error {
 	}
 
 	if vv.Kind() == reflect.Pointer {
-		// if we expand into a pointer, we create the zero value and expand into that instead
-		// this allow to expand into *bool or *string
+		// if we unmarshal into a pointer, we create the zero value and unmarshal into that instead
+		// this allow to unmarshal into *bool or *string
 		e := reflect.New(vv.Type().Elem())
-		err := from.expandInto(c, this, path, e.Elem())
+		err := from.unmarshalInto(c, this, path, e.Elem())
 		if err != nil {
 			return err
 		}
@@ -94,10 +101,16 @@ func (this Handler) expand(c ctx.C, path Path, from Node, into any) error {
 		return nil
 	}
 
-	return from.expandInto(c, this, path, vv)
+	return from.unmarshalInto(c, this, path, vv)
 }
 
-func (this Handler) Conflate(c ctx.C, in any) (Node, error) {
+// transform an object into a enc.Node
+func Marshal(c ctx.C, in any) (Node, error) {
+	return Handler{}.Marshal(c, in)
+}
+
+// TODO(oha) no reason to have the Handler to Unmarshal()
+func (this Handler) Marshal(c ctx.C, in any) (Node, error) {
 	switch in := in.(type) {
 	case nil:
 		return Nil{}, nil
@@ -111,9 +124,25 @@ func (this Handler) Conflate(c ctx.C, in any) (Node, error) {
 	t := v.Type()
 	switch t.Kind() {
 	default:
+		log.Warnf(c, "possible wrong fallback for type %T", in)
 		return fromNative(in), nil
+	case reflect.Int:
+		return Number(v.Int()), nil
+	case reflect.String:
+		return String(v.String()), nil
 	case reflect.Pointer:
-		return this.Conflate(c, v.Elem().Interface())
+		return this.Marshal(c, v.Elem().Interface())
+	case reflect.Slice:
+		list := List{}
+		for i := 0; i < v.Len(); i++ {
+			ev := v.Index(i)
+			e, err := this.Marshal(c, ev.Interface())
+			if err != nil {
+				return nil, err
+			}
+			list = append(list, e)
+		}
+		return list, nil
 	case reflect.Struct:
 	}
 
@@ -128,7 +157,7 @@ func (this Handler) Conflate(c ctx.C, in any) (Node, error) {
 			continue
 		}
 		fv := v.Field(i)
-		fn, err := this.Conflate(c, fv.Interface())
+		fn, err := this.Marshal(c, fv.Interface())
 		if err != nil {
 			return nil, err
 		}

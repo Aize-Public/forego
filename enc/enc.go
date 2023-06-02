@@ -11,7 +11,7 @@ import (
 
 type Node interface {
 	native() any
-	expandInto(c ctx.C, handler Handler, path Path, into reflect.Value) error
+	unmarshalInto(c ctx.C, handler Handler, path Path, into reflect.Value) error
 }
 
 type Codec interface {
