@@ -2,6 +2,7 @@ package enc
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"time"
 
@@ -17,6 +18,8 @@ type Handler struct {
 	UnhandledFields func(c ctx.C, path Path, n Node) error
 }
 
+var ineff = map[string]bool{}
+
 func Unmarshal(c ctx.C, n Node, into any) error {
 	return Handler{}.Unmarshal(c, n, into)
 }
@@ -25,11 +28,18 @@ func (this Handler) Unmarshal(c ctx.C, n Node, into any) error {
 	if n == nil {
 		n = Nil{}
 	}
+	switch into := into.(type) {
+	case Unmarshaler:
+		return into.UnmarshalTree(c, n)
+	case json.Unmarshaler:
+		j := JSON{}.Encode(c, n)
+		return into.UnmarshalJSON(j)
+	}
 	v := reflect.ValueOf(into)
 	if v.Kind() != reflect.Pointer {
 		return ctx.NewErrorf(c, "expected pointer to unmarshal into, got: %T", into)
 	}
-	return n.unmarshalInto(c, this, Path{}, v.Elem())
+	return n.unmarshalInto(c, this, Path{v.Type()}, v.Elem())
 }
 
 func (this Handler) unmarshal(c ctx.C, path Path, from Node, into any) error {
@@ -47,10 +57,10 @@ func (this Handler) unmarshal(c ctx.C, path Path, from Node, into any) error {
 		return into.UnmarshalTree(c, from)
 	case *json.RawMessage:
 		*into = JSON{}.Encode(c, from)
-		log.Infof(c, "Warn: inefficient json.RawMessage, use enc.Tree instead")
+		warnIneff(c, "Warn: inefficient json.RawMessage, use enc.Tree instead")
 		return nil
 	case json.Unmarshaler:
-		log.Infof(c, "Warn: inefficient %T.UnmarshalJSON(): implement %T instead", into, (Unmarshaler)(nil))
+		warnIneff(c, "Warn: inefficient %T.UnmarshalJSON(): implement enc.Unmarshaler instead", into)
 		j, _ := json.Marshal(from) // we must go back to the json
 		return into.UnmarshalJSON(j)
 	case *Node:
@@ -104,6 +114,14 @@ func (this Handler) unmarshal(c ctx.C, path Path, from Node, into any) error {
 	return from.unmarshalInto(c, this, path, vv)
 }
 
+func warnIneff(c ctx.C, f string, args ...any) {
+	msg := fmt.Sprintf(f, args...)
+	if !ineff[msg] {
+		ineff[msg] = true
+		log.Warnf(c, f, args...)
+	}
+}
+
 // transform an object into a enc.Node
 func Marshal(c ctx.C, in any) (Node, error) {
 	return Handler{}.Marshal(c, in)
@@ -114,10 +132,16 @@ func (this Handler) Marshal(c ctx.C, in any) (Node, error) {
 	switch in := in.(type) {
 	case nil:
 		return Nil{}, nil
-	case json.Marshaler:
-		panic("NIY")
 	case Marshaler:
 		return in.MarshalTree(c)
+	case json.Marshaler:
+		j, err := in.MarshalJSON()
+		if err != nil {
+			return nil, err
+		}
+		return JSON{}.Decode(c, j)
+	case Node:
+		return in, nil
 	}
 
 	v := reflect.ValueOf(in)

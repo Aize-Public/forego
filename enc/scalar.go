@@ -32,7 +32,7 @@ func (this String) unmarshalInto(c ctx.C, handler Handler, path Path, into refle
 		v := reflect.ValueOf(this.native())
 		into.Set(v)
 	default:
-		return ctx.NewErrorf(c, "can't unmarshal %T into %v", this, into.Type())
+		return ctx.NewErrorf(c, "can't unmarshal %s %T into %v", path, this, into.Type())
 	}
 	return nil
 }

@@ -19,7 +19,7 @@ func (this Nil) GoString() string {
 }
 
 func (this Nil) String() string {
-	return "<nil>"
+	return "null"
 }
 
 func (this Nil) unmarshalInto(c ctx.C, handler Handler, path Path, into reflect.Value) error {

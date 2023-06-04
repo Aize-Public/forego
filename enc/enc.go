@@ -39,6 +39,8 @@ func (this Path) String() string {
 			out += "." + v
 		case int:
 			out += fmt.Sprintf("[%d]", v)
+		default:
+			out += fmt.Sprintf("{%v}", v)
 		}
 	}
 	if out == "" {

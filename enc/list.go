@@ -46,7 +46,7 @@ func (this List) unmarshalInto(c ctx.C, handler Handler, path Path, into reflect
 		slice := reflect.MakeSlice(into.Type(), len(this), len(this))
 		for i := 0; i < len(this); i++ {
 			ev := slice.Index(i)
-			err := this.unmarshalInto(c, handler, path.Append(i), ev.Addr())
+			err := this[i].unmarshalInto(c, handler, path.Append(i), ev)
 			if err != nil {
 				return err
 			}
@@ -55,6 +55,6 @@ func (this List) unmarshalInto(c ctx.C, handler Handler, path Path, into reflect
 		return nil
 		// TODO array
 	default:
-		return ctx.NewErrorf(c, "can't unmarshal %T into %v", this, into.Type())
+		return ctx.NewErrorf(c, "can't unmarshal %T into %v at %s", this, into.Type(), path)
 	}
 }
