@@ -3,10 +3,10 @@ package enc
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/Aize-Public/forego/ctx"
-	"github.com/Aize-Public/forego/ctx/log"
 )
 
 // unordered map
@@ -41,23 +41,36 @@ func (this Map) GoString() string {
 func (this Map) unmarshalInto(c ctx.C, handler Handler, path Path, into reflect.Value) error {
 	switch into.Kind() {
 	case reflect.Map:
-		log.Debugf(c, "%T.expandInto() => map", this)
 		t := into.Type()
 		intokt := t.Key()
 		intovt := t.Elem()
 		mv := reflect.MakeMap(t)
 		for k, v := range this {
-			kv := reflect.New(intokt)
-			err := handler.unmarshal(c, path.Append("#key"), String(k), kv.Interface())
-			if err != nil {
-				return err
+			kv := reflect.New(intokt).Elem()
+			switch intokt.Kind() {
+			case reflect.String:
+				kv.SetString(k)
+			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+				i, err := strconv.ParseInt(k, 10, 64)
+				if err != nil {
+					return ctx.NewErrorf(c, "can't convert %q to string at %v", k, path.Append("#key"))
+				}
+				kv.SetInt(i)
+			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+				i, err := strconv.ParseUint(k, 10, 64)
+				if err != nil {
+					return ctx.NewErrorf(c, "can't convert %q to string at %v", k, path.Append("#key"))
+				}
+				kv.SetUint(i)
+			default:
+				return ctx.NewErrorf(c, "unsupported key value %T at %s", intokt, path.Append("#key"))
 			}
 			vv := reflect.New(intovt)
-			err = handler.unmarshal(c, path.Append("#val"), v, vv.Interface())
+			err := handler.unmarshal(c, path.Append("#val"), v, vv.Interface())
 			if err != nil {
 				return err
 			}
-			mv.SetMapIndex(kv.Elem(), vv.Elem())
+			mv.SetMapIndex(kv, vv.Elem())
 		}
 		into.Set(mv)
 		return nil

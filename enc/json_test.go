@@ -117,7 +117,7 @@ func TestRawNode(t *testing.T) {
 
 		in := enc.Map{
 			"s": enc.String("foo"),
-			"x": enc.String("bar"),
+			"x": enc.String("bar"), // will fail to unmarshal into map
 		}
 
 		err := enc.Unmarshal(c, in, &x)

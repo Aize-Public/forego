@@ -146,6 +146,12 @@ func TestCompat(t *testing.T) {
 		j, _ := json.Marshal(map[int]string{3: "three"})
 		test.EqualsStr(t, string(j), fmt.Sprint(n))
 	}
+	{
+		var m map[int]string
+		err := enc.Unmarshal(c, enc.Map{"3": enc.String("three")}, &m)
+		test.NoError(t, err)
+		test.EqualsGo(t, map[int]string{3: "three"}, m)
+	}
 
 	if false { // strictly json is different, but does it really matter?
 		type Pair struct {
