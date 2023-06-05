@@ -75,7 +75,8 @@ func (this Handler) unmarshal(c ctx.C, path Path, from Node, into any) error {
 	}
 
 	vv := v.Elem()
-	if from == nil {
+	switch from.(type) {
+	case nil, Nil:
 		vv.SetZero()
 		return nil
 	}

@@ -7,7 +7,7 @@ import (
 	"github.com/Aize-Public/forego/test"
 )
 
-func TestExpand(t *testing.T) {
+func TestUnmarshal(t *testing.T) {
 	c := test.Context(t)
 
 	// Unmarshal into any
@@ -57,10 +57,35 @@ func TestExpand(t *testing.T) {
 			enc.Map{"list": enc.List{enc.Nil{}, enc.Number(3.14)}},
 			map[string]any{"list": []any{nil, 3.14}},
 		)
+		// TODO check for error if passing not a map
+	})
+
+	t.Run("*struct", func(t *testing.T) {
+		type X struct {
+			I int `json:"i"`
+		}
+		var y struct {
+			X *X `json:"x"`
+		}
+		err := enc.Unmarshal(c, enc.Map{"x": enc.Map{"i": enc.Number(314)}}, &y)
+		test.NoError(t, err)
+		test.ContainsJSON(t, y, "314")
+
+		y.X = nil
+		err = enc.Unmarshal(c, enc.Map{}, &y)
+		test.NoError(t, err)
+		test.Nil(t, y.X)
+		test.ContainsJSON(t, y, "null")
+
+		y.X = nil
+		err = enc.Unmarshal(c, enc.Map{"x": enc.Nil{}}, &y)
+		test.NoError(t, err)
+		test.Nil(t, y.X)
+		test.ContainsJSON(t, y, "null")
 	})
 }
 
-func TestConflate(t *testing.T) {
+func TestMarshal(t *testing.T) {
 	c := test.Context(t)
 
 	x := struct {
