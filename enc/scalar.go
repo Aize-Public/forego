@@ -57,10 +57,20 @@ func (this Number) String() string {
 func (this Number) unmarshalInto(c ctx.C, handler Handler, path Path, into reflect.Value) error {
 	//log.Debugf(c, "%v.unmarshalInto(%#v)", this, into)
 	switch into.Kind() {
-	case reflect.Float64:
+	case reflect.Float64, reflect.Float32:
 		into.SetFloat(float64(this))
-	case reflect.Int:
+	case reflect.Int,
+		reflect.Int8,
+		reflect.Int16,
+		reflect.Int32,
+		reflect.Int64:
 		into.SetInt(int64(this))
+	case reflect.Uint,
+		reflect.Uint8,
+		reflect.Uint16,
+		reflect.Uint32,
+		reflect.Uint64:
+		into.SetUint(uint64(this))
 	case reflect.Interface:
 		v := reflect.ValueOf(this.native())
 		into.Set(v)
