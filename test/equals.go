@@ -7,6 +7,24 @@ import (
 	"github.com/Aize-Public/forego/utils/ast"
 )
 
+func EqualsStr(t *testing.T, expect, got string) {
+	t.Helper()
+	equal(expect, got).prefix("%s == %s", Quote(ast.Assignment(0, 1)), Quote(ast.Assignment(0, 2))).true(t)
+}
+
+func NotEqualsStr(t *testing.T, expect, got string) {
+	t.Helper()
+	equal(expect, got).prefix("%s == %s", Quote(ast.Assignment(0, 1)), Quote(ast.Assignment(0, 2))).false(t)
+}
+
+func equal(e, g string) res {
+	if e == g {
+		return res{true, e}
+	} else {
+		return res{false, fmt.Sprintf("%s != %s", Quote(e), Quote(g))}
+	}
+}
+
 // compare using "%#v"
 func EqualsGo(t *testing.T, expect, got any) {
 	t.Helper()

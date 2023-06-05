@@ -183,11 +183,12 @@ func (this Handler) Marshal(c ctx.C, in any) (Node, error) {
 		m := Map{}
 		for _, kv := range v.MapKeys() {
 			vv := v.MapIndex(kv)
-			var err error
-			m[kv.String()], err = this.Marshal(c, vv.Interface())
+			n, err := this.Marshal(c, vv.Interface())
 			if err != nil {
 				return nil, err
 			}
+			k := fmt.Sprint(kv.Interface()) // TODO(oha): is this ok?
+			m[k] = n
 		}
 		return m, nil
 

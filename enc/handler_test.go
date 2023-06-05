@@ -1,6 +1,8 @@
 package enc_test
 
 import (
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/Aize-Public/forego/enc"
@@ -132,5 +134,28 @@ func TestMarshal(t *testing.T) {
 		default:
 			test.Fail(t, "expected enc.Nil, got %T", n)
 		}
+	}
+}
+
+func TestCompat(t *testing.T) {
+	c := test.Context(t)
+	{
+		n, err := enc.Marshal(c, map[int]string{3: "three"})
+		test.NoError(t, err)
+		t.Logf("n: %+v", n)
+		j, _ := json.Marshal(map[int]string{3: "three"})
+		test.EqualsStr(t, string(j), fmt.Sprint(n))
+	}
+
+	if false { // strictly json is different, but does it really matter?
+		type Pair struct {
+			x int
+			y int
+		}
+		_, err := json.Marshal(map[Pair]string{{3, 4}: "three"})
+		test.Error(t, err)
+
+		_, err = enc.Marshal(c, map[Pair]string{{3, 4}: "three"})
+		test.Error(t, err)
 	}
 }
