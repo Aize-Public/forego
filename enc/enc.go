@@ -73,6 +73,7 @@ func fromNative(in any) Node {
 	case nil:
 		return Nil{}
 	case map[string]any:
+
 		out := Map{}
 		for k, v := range in {
 			out[k] = fromNative(v)

@@ -151,13 +151,21 @@ func (this Handler) Marshal(c ctx.C, in any) (Node, error) {
 	default:
 		log.Warnf(c, "possible wrong fallback for type %T", in)
 		return fromNative(in), nil
+	case reflect.Bool:
+		return Bool(v.Bool()), nil
 	case reflect.Int:
 		return Number(v.Int()), nil
 	case reflect.String:
 		return String(v.String()), nil
 	case reflect.Pointer:
+		if v.IsNil() {
+			return Nil{}, nil
+		}
 		return this.Marshal(c, v.Elem().Interface())
 	case reflect.Slice:
+		if v.IsNil() {
+			return Nil{}, nil
+		}
 		list := List{}
 		for i := 0; i < v.Len(); i++ {
 			ev := v.Index(i)
@@ -168,6 +176,21 @@ func (this Handler) Marshal(c ctx.C, in any) (Node, error) {
 			list = append(list, e)
 		}
 		return list, nil
+	case reflect.Map:
+		if v.IsNil() {
+			return Nil{}, nil
+		}
+		m := Map{}
+		for _, kv := range v.MapKeys() {
+			vv := v.MapIndex(kv)
+			var err error
+			m[kv.String()], err = this.Marshal(c, vv.Interface())
+			if err != nil {
+				return nil, err
+			}
+		}
+		return m, nil
+
 	case reflect.Struct:
 	}
 

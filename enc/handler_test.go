@@ -115,4 +115,22 @@ func TestMarshal(t *testing.T) {
 		test.NoError(t, err)
 		t.Logf("%v", n)
 	}
+	{
+		n, err := enc.Marshal(c, (map[string]any)(nil))
+		test.NoError(t, err)
+		switch n.(type) {
+		case enc.Nil:
+		default:
+			test.Fail(t, "expected enc.Nil, got %T", n)
+		}
+	}
+	{
+		n, err := enc.Marshal(c, ([]any)(nil))
+		test.NoError(t, err)
+		switch n.(type) {
+		case enc.Nil:
+		default:
+			test.Fail(t, "expected enc.Nil, got %T", n)
+		}
+	}
 }
