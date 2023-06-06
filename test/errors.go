@@ -25,8 +25,6 @@ func NoError(t *testing.T, err error) {
 
 func Error(t *testing.T, err error) {
 	t.Helper()
-	isNil(err).assignment(0, 1).false(t)
-
 	if isNil(err).succeed {
 		Fail(t, "expected error: ", stringy{ast.Assignment(0, 1)})
 	} else {
