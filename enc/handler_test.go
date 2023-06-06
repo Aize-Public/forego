@@ -178,16 +178,11 @@ func TestCompat(t *testing.T) {
 	}
 }
 
-func clone[T any](t T) (out T) {
-	return out
-}
-
-func TestStructPtr(t *testing.T) {
+func TestListPtrStruct(t *testing.T) {
 	c := test.Context(t)
 
-	type X struct {
-	}
-	xs := []*X{}
+	type X struct{}
+	xs := []*X{} // Note(oha): we must test nested pointer to structs
 	err := enc.Unmarshal(c, enc.List{
 		enc.Map{},
 	}, &xs)

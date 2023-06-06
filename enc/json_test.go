@@ -1,8 +1,11 @@
 package enc_test
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
+	"github.com/Aize-Public/forego/ctx/log"
 	"github.com/Aize-Public/forego/enc"
 	"github.com/Aize-Public/forego/test"
 )
@@ -66,6 +69,30 @@ func TestJSON(t *testing.T) {
 		check(`[[],null]`, enc.List{enc.List{}, enc.Nil{}})
 		check(`{"l":[]}`, enc.Map{"l": enc.List{}})
 	})
+}
+
+func TestTime(t *testing.T) {
+	c := test.Context(t)
+	h := enc.Handler{
+		Debugf: log.Debugf,
+	}
+	type X struct {
+		T time.Time `json:"time"`
+	}
+	in := X{
+		T: time.Now(),
+	}
+	n, err := h.Marshal(c, in)
+	test.NoError(t, err)
+	test.Contains(t, n.GoString(), fmt.Sprint(in.T.Year())) // enc.Pairs
+	j := enc.JSON{}.Encode(c, n)
+	test.ContainsJSON(t, j, fmt.Sprint(in.T.Year()))
+	n2, err := enc.JSON{}.Decode(c, j)
+	test.Contains(t, n2.GoString(), fmt.Sprint(in.T.Year())) // enc.Map
+	var out X
+	err = h.Unmarshal(c, n2, &out)
+	test.NoError(t, err)
+	test.EqualsGo(t, in, out)
 }
 
 func TestRawNode(t *testing.T) {

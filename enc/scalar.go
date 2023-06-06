@@ -3,6 +3,7 @@ package enc
 import (
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/Aize-Public/forego/ctx"
 	"github.com/Aize-Public/forego/ctx/log"
@@ -111,6 +112,33 @@ func (this Bool) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) err
 		into.SetBool(bool(this))
 	case reflect.Interface:
 		into.Set(reflect.ValueOf(bool(this)))
+	default:
+		return ctx.NewErrorf(c, "can't unmarshal %T into %v", this, into.Type())
+	}
+	return nil
+}
+
+type Time time.Time
+
+var _ Node = Time(time.Time{})
+
+func (this Time) native() any {
+	return time.Time(this)
+}
+
+func (this Time) GoString() string {
+	return fmt.Sprintf("enc.Time{%s}", time.Time(this).Format(time.RFC3339))
+}
+
+func (this Time) String() string {
+	return time.Time(this).Format(time.RFC3339)
+}
+
+func (this Time) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) error {
+	log.Debugf(c, "%v.unmarshalInto(%#v)", this, into)
+	switch into.Kind() {
+	case reflect.Struct:
+		into.Set(reflect.ValueOf(time.Time(this)))
 	default:
 		return ctx.NewErrorf(c, "can't unmarshal %T into %v", this, into.Type())
 	}

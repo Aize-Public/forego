@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/Aize-Public/forego/ctx"
 )
@@ -12,6 +13,8 @@ import (
 type Node interface {
 	native() any
 	unmarshalInto(c ctx.C, handler Handler, into reflect.Value) error
+	String() string
+	GoString() string
 }
 
 type Codec interface {
@@ -81,6 +84,10 @@ func fromNative(in any) Node {
 			out = append(out, fromNative(v))
 		}
 		return out
+
+	case time.Time:
+		return Time(in)
+
 	case string:
 		return String(in)
 

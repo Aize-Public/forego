@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"time"
 
 	"github.com/Aize-Public/forego/ctx"
 	"github.com/Aize-Public/forego/ctx/log"
@@ -64,18 +63,6 @@ func (this Handler) unmarshal(c ctx.C, from Node, v reflect.Value) error {
 		}
 	}
 	switch into := v.Addr().Interface().(type) {
-	case *time.Time:
-		if this.Debugf != nil {
-			this.Debugf(c, "is %T", into)
-		}
-		switch from := from.(type) {
-		case String:
-			var err error
-			*into, err = time.Parse(time.RFC3339Nano, from.String())
-			return err
-		default:
-			return ctx.NewErrorf(c, "can't expend time.Time from %T (%v)", from, from)
-		}
 	case Unmarshaler:
 		if this.Debugf != nil {
 			this.Debugf(c, "is %T", into)
