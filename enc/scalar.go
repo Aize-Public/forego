@@ -3,7 +3,6 @@ package enc
 import (
 	"fmt"
 	"reflect"
-	"time"
 
 	"github.com/Aize-Public/forego/ctx"
 	"github.com/Aize-Public/forego/ctx/log"
@@ -118,6 +117,7 @@ func (this Bool) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) err
 	return nil
 }
 
+/*
 type Time time.Time
 
 var _ Node = Time(time.Time{})
@@ -144,3 +144,4 @@ func (this Time) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) err
 	}
 	return nil
 }
+*/

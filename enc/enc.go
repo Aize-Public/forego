@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	"time"
 
 	"github.com/Aize-Public/forego/ctx"
 )
@@ -84,9 +83,6 @@ func fromNative(in any) Node {
 			out = append(out, fromNative(v))
 		}
 		return out
-
-	case time.Time:
-		return Time(in)
 
 	case string:
 		return String(in)

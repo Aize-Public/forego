@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/Aize-Public/forego/ctx"
 	"github.com/Aize-Public/forego/ctx/log"
@@ -74,6 +75,14 @@ func (this Handler) unmarshal(c ctx.C, from Node, v reflect.Value) error {
 		}
 		*into = JSON{}.Encode(c, from)
 		warnIneff(c, "Warn: inefficient json.RawMessage, use enc.Tree instead")
+		return nil
+	case *time.Time:
+		var t time.Time
+		err := json.Unmarshal(JSON{}.Encode(c, from), &t)
+		if err != nil {
+			return ctx.NewErrorf(c, "can't unmarshal %#v as time", from)
+		}
+		*into = t
 		return nil
 	case json.Unmarshaler:
 		if this.Debugf != nil {
@@ -157,6 +166,8 @@ func (this Handler) Marshal(c ctx.C, in any) (Node, error) {
 	switch in := in.(type) {
 	case nil:
 		return Nil{}, nil
+	case time.Time:
+		return String(in.Format(time.RFC3339Nano)), nil
 	case Marshaler:
 		return in.MarshalTree(c)
 	case json.Marshaler:
