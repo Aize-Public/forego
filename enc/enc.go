@@ -11,7 +11,7 @@ import (
 
 type Node interface {
 	native() any
-	unmarshalInto(c ctx.C, handler Handler, path Path, into reflect.Value) error
+	unmarshalInto(c ctx.C, handler Handler, into reflect.Value) error
 }
 
 type Codec interface {
@@ -29,9 +29,9 @@ type Marshaler interface {
 	MarshalTree(ctx.C) (Node, error)
 }
 
-type Path []any
+type path []any
 
-func (this Path) String() string {
+func (this path) String() string {
 	out := ""
 	for _, v := range this {
 		switch v := v.(type) {
@@ -49,11 +49,7 @@ func (this Path) String() string {
 	return strings.TrimPrefix(out, ".")
 }
 
-func (this Path) Append(d any) Path {
-	return append(this, d)
-}
-
-func (this Path) Parent() Path {
+func (this path) Parent() path {
 	if len(this) > 0 {
 		return this[0 : len(this)-2]
 	}

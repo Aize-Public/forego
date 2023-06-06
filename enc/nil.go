@@ -22,7 +22,7 @@ func (this Nil) String() string {
 	return "null"
 }
 
-func (this Nil) unmarshalInto(c ctx.C, handler Handler, path Path, into reflect.Value) error {
+func (this Nil) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) error {
 	into.SetZero()
 	return nil
 }

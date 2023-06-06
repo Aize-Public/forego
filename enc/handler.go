@@ -15,7 +15,16 @@ type Handler struct {
 	Factory map[reflect.Type]func(c ctx.C, n Node) (any, error)
 
 	// called if a field is present in the NodeTree but there is no mapping on the object it's unmarshaled into
-	UnhandledFields func(c ctx.C, path Path, n Node) error
+	UnhandledFields func(c ctx.C, path path, n Node) error
+
+	Debugf func(c ctx.C, f string, args ...any)
+
+	path path
+}
+
+func (this Handler) Append(p any) Handler {
+	this.path = append(this.path, p)
+	return this
 }
 
 var ineff = map[string]bool{}
@@ -28,23 +37,37 @@ func (this Handler) Unmarshal(c ctx.C, n Node, into any) error {
 	if n == nil {
 		n = Nil{}
 	}
-	switch into := into.(type) {
-	case Unmarshaler:
-		return into.UnmarshalTree(c, n)
-	case json.Unmarshaler:
-		j := JSON{}.Encode(c, n)
-		return into.UnmarshalJSON(j)
-	}
-	v := reflect.ValueOf(into)
-	if v.Kind() != reflect.Pointer {
-		return ctx.NewErrorf(c, "expected pointer to unmarshal into, got: %T", into)
-	}
-	return n.unmarshalInto(c, this, Path{v.Type()}, v.Elem())
+	v := reflect.ValueOf(into).Elem()
+	return this.Append(v.Type()).unmarshal(c, n, v)
 }
 
-func (this Handler) unmarshal(c ctx.C, path Path, from Node, into any) error {
-	switch into := into.(type) {
-	case *time.Time: // override from default go
+func (this Handler) unmarshal(c ctx.C, from Node, v reflect.Value) error {
+	c = ctx.WithTag(c, "path", this.path.String())
+	if this.Debugf != nil {
+		this.Debugf(c, "unmarshal( %v -> %v{%v} )", from, v.Type(), v)
+	}
+	if !v.CanSet() {
+		return ctx.NewErrorf(c, "can't assign %v", v)
+	}
+	if v.Kind() == reflect.Pointer {
+		switch from.(type) {
+		case Nil:
+			v.SetZero()
+			return nil
+		default:
+			vv := reflect.New(v.Type().Elem())
+			v.Set(vv)
+			if this.Debugf != nil {
+				this.Debugf(c, "pointer deref: %v -> %v", v.Type(), v.Elem().Type())
+			}
+			return this.unmarshal(c, from, v.Elem())
+		}
+	}
+	switch into := v.Addr().Interface().(type) {
+	case *time.Time:
+		if this.Debugf != nil {
+			this.Debugf(c, "is %T", into)
+		}
 		switch from := from.(type) {
 		case String:
 			var err error
@@ -54,36 +77,46 @@ func (this Handler) unmarshal(c ctx.C, path Path, from Node, into any) error {
 			return ctx.NewErrorf(c, "can't expend time.Time from %T (%v)", from, from)
 		}
 	case Unmarshaler:
+		if this.Debugf != nil {
+			this.Debugf(c, "is %T", into)
+		}
 		return into.UnmarshalTree(c, from)
 	case *json.RawMessage:
+		if this.Debugf != nil {
+			this.Debugf(c, "is %T", into)
+		}
 		*into = JSON{}.Encode(c, from)
 		warnIneff(c, "Warn: inefficient json.RawMessage, use enc.Tree instead")
 		return nil
 	case json.Unmarshaler:
+		if this.Debugf != nil {
+			this.Debugf(c, "is %T", into)
+		}
 		warnIneff(c, "Warn: inefficient %T.UnmarshalJSON(): implement enc.Unmarshaler instead", into)
 		j, _ := json.Marshal(from) // we must go back to the json
 		return into.UnmarshalJSON(j)
 	case *Node:
+		if this.Debugf != nil {
+			this.Debugf(c, "is %T", into)
+		}
 		// NOTE(oha) if a struct has a field of type enc.Node, we drop the data there (similarly to json.RawMessage)
 		*into = from
 		return nil
 	}
-	v := reflect.ValueOf(into)
 
-	if v.Kind() != reflect.Pointer {
-		return ctx.NewErrorf(c, "expected pointer, got %T", into)
-	}
-
-	vv := v.Elem()
-	switch from.(type) {
-	case nil, Nil:
-		vv.SetZero()
-		return nil
-	}
+	/*
+		vv := v.Elem()
+		switch from.(type) {
+		case nil, Nil:
+			vv.SetZero()
+			return nil
+		}
+	*/
 
 	if this.Factory != nil {
-		f := this.Factory[v.Type().Elem()] // Note(oha): we get a pointer to the interface to assign to
+		f := this.Factory[v.Type()]
 		if f != nil {
+			log.Debugf(c, "factory for type %v", v.Type())
 			obj, err := f(c, from)
 			if err != nil {
 				return ctx.NewErrorf(c, "factory error: %w", err)
@@ -100,19 +133,23 @@ func (this Handler) unmarshal(c ctx.C, path Path, from Node, into any) error {
 		}
 	}
 
-	if vv.Kind() == reflect.Pointer {
-		// if we unmarshal into a pointer, we create the zero value and unmarshal into that instead
-		// this allow to unmarshal into *bool or *string
-		e := reflect.New(vv.Type().Elem())
-		err := from.unmarshalInto(c, this, path, e.Elem())
-		if err != nil {
-			return err
+	log.Debugf(c, "normal type: %v, use generic %T.unmarshalInto()", v.Type(), from)
+	/*
+		if v.Kind() == reflect.Pointer {
+			// if we unmarshal into a pointer, we create the zero value and unmarshal into that instead
+			// this allow to unmarshal into *bool or *string
+			e := reflect.New(v.Type().Elem())
+			log.Debugf(c, "OHA4: %v", e.Type())
+			err := from.unmarshalInto(c, this, path, e.Elem())
+			if err != nil {
+				return err
+			}
+			v.Set(e)
+			return nil
 		}
-		vv.Set(e)
-		return nil
-	}
+	*/
 
-	return from.unmarshalInto(c, this, path, vv)
+	return from.unmarshalInto(c, this, v)
 }
 
 func warnIneff(c ctx.C, f string, args ...any) {

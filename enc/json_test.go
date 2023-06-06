@@ -122,5 +122,6 @@ func TestRawNode(t *testing.T) {
 
 		err := enc.Unmarshal(c, in, &x)
 		test.Error(t, err)
+		t.Logf("OK!")
 	})
 }

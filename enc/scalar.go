@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/Aize-Public/forego/ctx"
+	"github.com/Aize-Public/forego/ctx/log"
 )
 
 type String string
@@ -23,7 +24,7 @@ func (this String) String() string {
 	return fmt.Sprintf("%q", string(this))
 }
 
-func (this String) unmarshalInto(c ctx.C, handler Handler, path Path, into reflect.Value) error {
+func (this String) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) error {
 	//log.Debugf(c, "%v.unmarshalInto(%#v)", this, into)
 	switch into.Kind() {
 	case reflect.String:
@@ -32,7 +33,7 @@ func (this String) unmarshalInto(c ctx.C, handler Handler, path Path, into refle
 		v := reflect.ValueOf(this.native())
 		into.Set(v)
 	default:
-		return ctx.NewErrorf(c, "can't unmarshal %s %T into %v", path, this, into.Type())
+		return ctx.NewErrorf(c, "can't unmarshal %s %T into %v", handler.path, this, into.Type())
 	}
 	return nil
 }
@@ -54,8 +55,7 @@ func (this Number) String() string {
 	return fmt.Sprintf("%v", float64(this))
 }
 
-func (this Number) unmarshalInto(c ctx.C, handler Handler, path Path, into reflect.Value) error {
-	//log.Debugf(c, "%v.unmarshalInto(%#v)", this, into)
+func (this Number) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) error {
 	switch into.Kind() {
 	case reflect.Float64, reflect.Float32:
 		into.SetFloat(float64(this))
@@ -104,14 +104,13 @@ func (this Bool) String() string {
 	}
 }
 
-func (this Bool) unmarshalInto(c ctx.C, handler Handler, path Path, into reflect.Value) error {
-	//log.Debugf(c, "%v.unmarshalInto(%#v)", this, into)
+func (this Bool) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) error {
+	log.Debugf(c, "%v.unmarshalInto(%#v)", this, into)
 	switch into.Kind() {
 	case reflect.Bool:
 		into.SetBool(bool(this))
 	case reflect.Interface:
-		v := reflect.ValueOf(bool(this))
-		into.Set(v)
+		into.Set(reflect.ValueOf(bool(this)))
 	default:
 		return ctx.NewErrorf(c, "can't unmarshal %T into %v", this, into.Type())
 	}

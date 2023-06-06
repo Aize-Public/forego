@@ -38,14 +38,14 @@ func (this Map) GoString() string {
 	return "enc.Map{" + strings.Join(p, ", ") + "}"
 }
 
-func (this Map) unmarshalInto(c ctx.C, handler Handler, path Path, into reflect.Value) error {
+func (this Map) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) error {
 	switch into.Kind() {
 	case reflect.Map:
 		t := into.Type()
 		intokt := t.Key()
 		intovt := t.Elem()
 		mv := reflect.MakeMap(t)
-		for k, v := range this {
+		for k, n := range this {
 			kv := reflect.New(intokt).Elem()
 			switch intokt.Kind() {
 			case reflect.String:
@@ -53,24 +53,24 @@ func (this Map) unmarshalInto(c ctx.C, handler Handler, path Path, into reflect.
 			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 				i, err := strconv.ParseInt(k, 10, 64)
 				if err != nil {
-					return ctx.NewErrorf(c, "can't convert %q to string at %v", k, path.Append("#key"))
+					return ctx.NewErrorf(c, "can't convert %q to string at %v", k, handler.path.String()+"#key")
 				}
 				kv.SetInt(i)
 			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 				i, err := strconv.ParseUint(k, 10, 64)
 				if err != nil {
-					return ctx.NewErrorf(c, "can't convert %q to string at %v", k, path.Append("#key"))
+					return ctx.NewErrorf(c, "can't convert %q to string at %v", k, handler.path.String()+"#key")
 				}
 				kv.SetUint(i)
 			default:
-				return ctx.NewErrorf(c, "unsupported key value %T at %s", intokt, path.Append("#key"))
+				return ctx.NewErrorf(c, "unsupported key value %T at %s", intokt, handler.path.String()+"#key")
 			}
-			vv := reflect.New(intovt)
-			err := handler.unmarshal(c, path.Append("#val"), v, vv.Interface())
+			vv := reflect.New(intovt).Elem()
+			err := handler.Append("#val").unmarshal(c, n, vv)
 			if err != nil {
 				return err
 			}
-			mv.SetMapIndex(kv, vv.Elem())
+			mv.SetMapIndex(kv, vv)
 		}
 		into.Set(mv)
 		return nil
@@ -86,7 +86,7 @@ func (this Map) unmarshalInto(c ctx.C, handler Handler, path Path, into reflect.
 				seen[tag.JSON] = true
 				v, ok := this[tag.JSON]
 				if ok {
-					err := handler.unmarshal(c, path.Append(tag.Name), v, fv.Addr().Interface())
+					err := handler.Append(tag.Name).unmarshal(c, v, fv)
 					if err != nil {
 						return err
 					}
@@ -96,7 +96,7 @@ func (this Map) unmarshalInto(c ctx.C, handler Handler, path Path, into reflect.
 		if handler.UnhandledFields != nil {
 			for k, v := range this {
 				if !seen[k] {
-					err := handler.UnhandledFields(c, append(path, k), v)
+					err := handler.UnhandledFields(c, append(handler.path, k), v)
 					if err != nil {
 						return ctx.NewError(c, err)
 					}
@@ -105,6 +105,9 @@ func (this Map) unmarshalInto(c ctx.C, handler Handler, path Path, into reflect.
 		}
 		return nil
 	case reflect.Interface:
+		if handler.Debugf != nil {
+			handler.Debugf(c, "assign %v to %v", into.Type(), this)
+		}
 		into.Set(reflect.ValueOf(this.native()))
 		return nil
 

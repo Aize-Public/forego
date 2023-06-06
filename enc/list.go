@@ -36,7 +36,7 @@ func (this List) String() string {
 	return "[" + strings.Join(list, ", ") + "]"
 }
 
-func (this List) unmarshalInto(c ctx.C, handler Handler, path Path, into reflect.Value) error {
+func (this List) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) error {
 	switch into.Kind() {
 	case reflect.Interface:
 		into.Set(reflect.ValueOf(this.native()))
@@ -46,7 +46,8 @@ func (this List) unmarshalInto(c ctx.C, handler Handler, path Path, into reflect
 		slice := reflect.MakeSlice(into.Type(), len(this), len(this))
 		for i := 0; i < len(this); i++ {
 			ev := slice.Index(i)
-			err := this[i].unmarshalInto(c, handler, path.Append(i), ev)
+			err := handler.Append(i).unmarshal(c, this[i], ev)
+			//err := this[i].unmarshalInto(c, handler, path.Append(i), ev)
 			if err != nil {
 				return err
 			}
@@ -54,7 +55,11 @@ func (this List) unmarshalInto(c ctx.C, handler Handler, path Path, into reflect
 		into.Set(slice)
 		return nil
 		// TODO array
+
+	case reflect.Invalid:
+		return ctx.NewErrorf(c, "can't unmarshal %T into %v at %s", this, into, handler.path.String())
+
 	default:
-		return ctx.NewErrorf(c, "can't unmarshal %T into %v at %s", this, into.Type(), path)
+		return ctx.NewErrorf(c, "can't unmarshal %T into %v at %s", this, into.Type(), handler.path.String())
 	}
 }
