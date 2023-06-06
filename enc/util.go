@@ -13,7 +13,7 @@ type Tag struct {
 	Skip      bool
 }
 
-// TODO(oha): we need to parse `enc`, `json` and eventually `yaml` and make sure the agree
+// TODO(oha): we need to parse `enc`, `json` and eventually `yaml` and make sure they agree
 func parseTag(tag reflect.StructField) (out Tag) {
 	out.Name = tag.Name
 

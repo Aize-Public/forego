@@ -31,7 +31,7 @@ func (this List) GoString() string {
 func (this List) String() string {
 	list := []string{}
 	for _, p := range this {
-		list = append(list, fmt.Sprintf("%#s", p))
+		list = append(list, fmt.Sprintf("%s", p))
 	}
 	return "[" + strings.Join(list, ", ") + "]"
 }
@@ -54,7 +54,19 @@ func (this List) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) err
 		}
 		into.Set(slice)
 		return nil
-		// TODO array
+
+	case reflect.Array:
+		array := reflect.ArrayOf(len(this), into.Type().Elem())
+		instance := reflect.New(array).Elem()
+		for i := 0; i < len(this); i++ {
+			ev := instance.Index(i)
+			err := handler.Append(i).unmarshal(c, this[i], ev)
+			if err != nil {
+				return err
+			}
+		}
+		into.Set(instance)
+		return nil
 
 	case reflect.Invalid:
 		return ctx.NewErrorf(c, "can't unmarshal %T into %v at %s", this, into, handler.path.String())
