@@ -63,7 +63,10 @@ func (this Map) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) erro
 				}
 				kv.SetUint(i)
 			default:
-				return ctx.NewErrorf(c, "unsupported key value %T at %s", intokt, handler.path.String()+"#key")
+				err := handler.Append("#key").unmarshal(c, String(k), kv)
+				if err != nil {
+					return ctx.NewErrorf(c, "can't convert %q to %v", k, intokt)
+				}
 			}
 			vv := reflect.New(intovt).Elem()
 			err := handler.Append("#val").unmarshal(c, n, vv)

@@ -129,7 +129,9 @@ func (this Handler) unmarshal(c ctx.C, from Node, v reflect.Value) error {
 		}
 	}
 
-	log.Debugf(c, "normal type: %v, use generic %T.unmarshalInto()", v.Type(), from)
+	if this.Debugf != nil {
+		this.Debugf(c, "normal type: %v, use generic %T.unmarshalInto()", v.Type(), from)
+	}
 	/*
 		if v.Kind() == reflect.Pointer {
 			// if we unmarshal into a pointer, we create the zero value and unmarshal into that instead
@@ -222,8 +224,23 @@ func (this Handler) Marshal(c ctx.C, in any) (Node, error) {
 			if err != nil {
 				return nil, err
 			}
-			k := fmt.Sprint(kv.Interface()) // TODO(oha): is this ok?
-			m[k] = n
+			switch k := kv.Interface().(type) {
+			case string:
+				m[k] = n
+			default:
+				nk, err := this.Marshal(c, k)
+				if err != nil {
+					return nil, err
+				}
+				switch nk := nk.(type) {
+				case String:
+					m[string(nk)] = n
+				case Number:
+					m[fmt.Sprint(nk)] = n
+				default:
+					return nil, ctx.NewErrorf(c, "can't marshal %v as map key", kv.Type())
+				}
+			}
 		}
 		return m, nil
 
