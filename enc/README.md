@@ -18,16 +18,16 @@ Rationale: in the built in `encoding/json` library, everything gets converted be
 
 This means that when customization is needed, you end up implementing `json.Unmarshaler` or `json.RawMessage`.
 
-This likely require multiple scans to the data, and writing code convoluted or just more complex.
+This likely requires multiple scans to the data, and writing convoluted code or simply more complex.
 
-Using an intermediate layer, which maps the primitive types in the JSON format, allow a single scan of the `[]byte` data, and only high
-level computation on it.
+Using an intermediate layer, which maps the primitive types in the JSON format, allows a single scan of the `[]byte` data, 
+and only high level computation on it.
 
 Those primitive types can be then used when custom marshaling or unmarshaling.
 
 ## enc.Pairs
 
-This is a special type that can Marshal itself as JSON object, but is implemented as a list of pairs, which then guarantee the order.
+This is a special type that can Marshal itself as a JSON object, but is implemented as a list of pairs, which then guarantee the order.
 
 To keep the usability of this library high, we opted to avoid OrderedMap which are clumsy to use, and instead allow you to choose between the 
 fast `enc.Map`, or the ordered `enc.Pairs`.

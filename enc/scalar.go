@@ -75,7 +75,7 @@ func (this Number) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) e
 		v := reflect.ValueOf(this.native())
 		into.Set(v)
 	default:
-		return ctx.NewErrorf(c, "can't unmarshal %T into %v", this, into.Type())
+		return ctx.NewErrorf(c, "can't unmarshal %s %T into %v", handler.path, this, into.Type())
 	}
 	return nil
 }
@@ -112,7 +112,7 @@ func (this Bool) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) err
 	case reflect.Interface:
 		into.Set(reflect.ValueOf(bool(this)))
 	default:
-		return ctx.NewErrorf(c, "can't unmarshal %T into %v", this, into.Type())
+		return ctx.NewErrorf(c, "can't unmarshal %s %T into %v", handler.path, this, into.Type())
 	}
 	return nil
 }

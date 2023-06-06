@@ -9,7 +9,7 @@ import (
 	"github.com/Aize-Public/forego/ctx"
 )
 
-// ordered pairs, used mostly internally when Unmarshalling structs, to presever the order of the fields
+// ordered pairs, used mostly internally when Unmarshalling structs, to preserve the order of the fields
 // can be used anywhere else where the order matters
 // Note(oha): currently not used while decoding, to keep the decode stack simple and easy, might be changed in the future?
 type Pairs []Pair

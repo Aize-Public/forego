@@ -203,6 +203,8 @@ func (this Handler) Marshal(c ctx.C, in any) (Node, error) {
 		if v.IsNil() {
 			return Nil{}, nil
 		}
+		fallthrough //Intentional, since the above check breaks when called on arrays
+	case reflect.Array:
 		list := List{}
 		for i := 0; i < v.Len(); i++ {
 			ev := v.Index(i)

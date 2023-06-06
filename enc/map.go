@@ -25,7 +25,7 @@ func (this Map) native() any {
 func (this Map) String() string {
 	p := []string{}
 	for k, v := range this {
-		p = append(p, fmt.Sprintf("%q:%#s", k, v))
+		p = append(p, fmt.Sprintf("%q:%s", k, v))
 	}
 	return "{" + strings.Join(p, ", ") + "}"
 }
@@ -33,7 +33,7 @@ func (this Map) String() string {
 func (this Map) GoString() string {
 	p := []string{}
 	for k, v := range this {
-		p = append(p, fmt.Sprintf("%q:%#s", k, v))
+		p = append(p, fmt.Sprintf("%q:%s", k, v))
 	}
 	return "enc.Map{" + strings.Join(p, ", ") + "}"
 }
@@ -115,6 +115,6 @@ func (this Map) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) erro
 		return nil
 
 	default:
-		return ctx.NewErrorf(c, "can't expand %T into %v", this, into.Type())
+		return ctx.NewErrorf(c, "can't expand %s %T into %v", handler.path, this, into.Type())
 	}
 }
