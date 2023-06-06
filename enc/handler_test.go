@@ -189,3 +189,21 @@ func TestListPtrStruct(t *testing.T) {
 	test.NoError(t, err)
 	t.Logf("%+v", xs)
 }
+
+func TestArray(t *testing.T) {
+	c := test.Context(t)
+	n := enc.Number(7)
+	var x [2]int
+	{
+		err := enc.Unmarshal(c, enc.List{n, n}, &x)
+		test.NoError(t, err)
+	}
+	{
+		err := enc.Unmarshal(c, enc.List{n, n, n}, &x)
+		test.Error(t, err)
+	}
+	{
+		err := enc.Unmarshal(c, enc.List{n}, &x)
+		test.Error(t, err)
+	}
+}

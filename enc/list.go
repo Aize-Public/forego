@@ -56,6 +56,9 @@ func (this List) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) err
 		return nil
 
 	case reflect.Array:
+		if len(this) != into.Type().Len() {
+			return ctx.NewErrorf(c, "expected %v, got %d elements instead", into.Type(), len(this))
+		}
 		array := reflect.ArrayOf(len(this), into.Type().Elem())
 		instance := reflect.New(array).Elem()
 		for i := 0; i < len(this); i++ {
