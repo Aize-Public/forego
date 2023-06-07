@@ -40,7 +40,7 @@ func (res res) argument(above, argNum int) res {
 	return res
 }
 
-func (res res) assignment(above, argNum int) res {
+func (res res) assignment(above, argNum int) res { // nolint:unused
 	res.msg = ast.Assignment(above+1, argNum) + ": " + res.msg
 	return res
 }

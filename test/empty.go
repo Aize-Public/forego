@@ -18,7 +18,7 @@ func Empty(t *testing.T, obj any) {
 
 func empty(obj any) res {
 	if obj == nil {
-		return res{true, fmt.Sprintf("is nil")}
+		return res{true, "is nil"}
 	}
 	v := reflect.ValueOf(obj)
 	switch v.Kind() {

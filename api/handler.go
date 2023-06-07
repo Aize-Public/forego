@@ -123,6 +123,7 @@ func (this Client[T]) Send(c ctx.C, obj T, data ClientRequest) error {
 
 func (this Server[T]) Recv(c ctx.C, req ServerRequest) (T, error) {
 	var zero T
+	log.Debugf(c, "Server[%T].Recv(%+v)", zero, req)
 	ptrV := reflect.New(this.typ)
 	v := ptrV.Elem()
 	for i, fv := range this.init {

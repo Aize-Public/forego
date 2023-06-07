@@ -1,4 +1,4 @@
-test: vet lint test-race
+test: vet test-long lint test-race
 
 test-race:
 	go test --short --race --trimpath ./...
@@ -9,7 +9,7 @@ test-short:
 test-long:
 	go test --trimpath ./...
 
-test-cover:
+test-ci-cover:
 	go test -cover --short --trimpath ./... -coverprofile=profile.cov -covermode=count 2>&1
 	go get github.com/boumenot/gocover-cobertura
 	go run github.com/boumenot/gocover-cobertura < profile.cov > coverage.xml

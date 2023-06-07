@@ -23,10 +23,10 @@ func parseTag(tag reflect.StructField) (out Tag) {
 		return
 	}
 	json, extra, _ := strings.Cut(json, ",")
-	if json == "" {
-		json = tag.Name // NOTE(oha): should we use "enc" name?
-	}
 	out.JSON = json
+	if out.JSON == "" {
+		out.JSON = out.Name
+	}
 	switch extra {
 	case "omitempty":
 		out.OmitEmpty = true

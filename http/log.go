@@ -5,8 +5,6 @@ import (
 	"net"
 	"net/http"
 	"time"
-
-	"github.com/Aize-Public/forego/ctx"
 )
 
 type Stat struct {
@@ -17,6 +15,7 @@ type Stat struct {
 	Elapsed time.Duration
 }
 
+/*
 func defaultMiddleware(h http.Handler, f func(s Stat)) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t0 := time.Now()
@@ -38,6 +37,7 @@ func defaultMiddleware(h http.Handler, f func(s Stat)) http.Handler {
 		})
 	})
 }
+*/
 
 type response struct {
 	http.ResponseWriter

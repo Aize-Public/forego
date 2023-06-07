@@ -88,6 +88,7 @@ func TestTime(t *testing.T) {
 	j := enc.JSON{}.Encode(c, n)
 	test.ContainsJSON(t, j, fmt.Sprint(in.T.Year()))
 	n2, err := enc.JSON{}.Decode(c, j)
+	test.NoError(t, err)
 	test.Contains(t, n2.GoString(), fmt.Sprint(in.T.Year())) // enc.Map
 	var out X
 	err = h.Unmarshal(c, n2, &out)

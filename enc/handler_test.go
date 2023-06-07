@@ -170,10 +170,10 @@ func TestCompat(t *testing.T) {
 			x int
 			y int
 		}
-		_, err := json.Marshal(map[Pair]string{{3, 4}: "three"})
+		_, err := json.Marshal(map[Pair]string{{3, 4}: "three"}) // nolint
 		test.Error(t, err)
 
-		_, err = h.Marshal(c, map[Pair]string{{3, 4}: "three"})
+		_, err = h.Marshal(c, map[Pair]string{{3, 4}: "three"}) // nolint
 		test.Error(t, err)
 	}
 }

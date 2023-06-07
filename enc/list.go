@@ -31,7 +31,7 @@ func (this List) GoString() string {
 func (this List) String() string {
 	list := []string{}
 	for _, p := range this {
-		list = append(list, fmt.Sprintf("%s", p))
+		list = append(list, p.String())
 	}
 	return "[" + strings.Join(list, ", ") + "]"
 }

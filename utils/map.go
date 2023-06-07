@@ -72,7 +72,7 @@ func (this OrderedMap[K, V]) Range(f func(K, V) error) error {
 
 func (this OrderedMap[K, V]) Len() int {
 	len := 0
-	this.Range(func(k K, v V) error {
+	_ = this.Range(func(k K, v V) error {
 		len++
 		return nil
 	})
@@ -81,7 +81,7 @@ func (this OrderedMap[K, V]) Len() int {
 
 func (this OrderedMap[K, V]) Keys() []K {
 	list := []K{}
-	this.Range(func(k K, v V) error {
+	_ = this.Range(func(k K, v V) error {
 		list = append(list, k)
 		return nil
 	})
@@ -90,7 +90,7 @@ func (this OrderedMap[K, V]) Keys() []K {
 
 func (this OrderedMap[K, V]) Values() []V {
 	list := []V{}
-	this.Range(func(k K, v V) error {
+	_ = this.Range(func(k K, v V) error {
 		list = append(list, v)
 		return nil
 	})

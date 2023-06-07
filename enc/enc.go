@@ -1,7 +1,6 @@
 package enc
 
 import (
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -56,14 +55,6 @@ func (this path) Parent() path {
 		return this[0 : len(this)-2]
 	}
 	return this
-}
-
-func toJson(in Node) []byte {
-	j, err := json.Marshal(in)
-	if err != nil {
-		panic(err)
-	}
-	return j
 }
 
 func fromNative(in any) Node {

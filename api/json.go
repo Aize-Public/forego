@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"io"
 	"reflect"
 
@@ -12,8 +11,9 @@ import (
 // implementation for all the client/server request/responses using json
 // Note(oha): the object is not goroutine safe, but it's not expected to be
 type JSON struct {
-	h    enc.Handler
-	j    enc.JSON
+	h enc.Handler
+	j enc.JSON
+
 	Data enc.Map
 	UID  enc.Node
 }
@@ -24,7 +24,7 @@ var _ ServerResponse = &JSON{}
 var _ ClientResponse = &JSON{}
 
 func (this JSON) String() string {
-	j, _ := json.Marshal(this)
+	j, _ := enc.MarshalJSON(ctx.TODO(), this)
 	return string(j)
 }
 
@@ -37,7 +37,7 @@ func (this *JSON) ReadFrom(c ctx.C, r io.Reader) error {
 		this.Data = enc.Map{}
 		return nil
 	}
-	n, err := enc.JSON{}.Decode(c, data)
+	n, err := this.j.Decode(c, data)
 	if err != nil {
 		return err
 	}

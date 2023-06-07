@@ -69,14 +69,8 @@ func (this Pairs) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) er
 }
 
 type Pair struct {
-	Name  string
-	JSON  string
-	Value Node
-}
+	Name string
+	JSON string
 
-func (this Pair) jsonName() string {
-	if this.JSON != "" {
-		return this.JSON
-	}
-	return this.Name
+	Value Node
 }

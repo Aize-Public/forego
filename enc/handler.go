@@ -15,7 +15,7 @@ type Handler struct {
 	Factory map[reflect.Type]func(c ctx.C, n Node) (any, error)
 
 	// called if a field is present in the NodeTree but there is no mapping on the object it's unmarshaled into
-	UnhandledFields func(c ctx.C, path path, n Node) error
+	UnhandledFields func(c ctx.C, path []any, n Node) error
 
 	Debugf func(c ctx.C, f string, args ...any)
 

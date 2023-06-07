@@ -35,9 +35,9 @@ func TestReadAll(t *testing.T) {
 
 		go func() {
 			time.Sleep(20 * time.Millisecond)
-			w.Write([]byte("foo"))
+			_, _ = w.Write([]byte("foo"))
 			time.Sleep(20 * time.Millisecond)
-			w.Write([]byte("bar"))
+			_, _ = w.Write([]byte("bar"))
 			time.Sleep(20 * time.Millisecond)
 			w.Close()
 		}()

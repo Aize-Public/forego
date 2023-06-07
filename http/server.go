@@ -40,9 +40,9 @@ func NewServer(c ctx.C) *Server {
 		switch w := w.(type) {
 		case http.Hijacker:
 			// if there is an hijacker, we need to be a bit clever
-			this.mux.ServeHTTP(responseHijacker{w2, w}, r)
+			this.mux.ServeHTTP(responseHijacker{w2, w}, r.WithContext(c))
 		default:
-			this.mux.ServeHTTP(w2, r)
+			this.mux.ServeHTTP(w2, r.WithContext(c))
 		}
 		this.OnResponse(Stat{
 			Method:  r.Method,
@@ -148,13 +148,13 @@ func (this *Server) HandleRequest(pattern string, f func(c ctx.C, in []byte, r *
 					"error":    err.Error(),
 					"tracking": nil, // TODO
 				})
-				w.Write(j)
+				_, _ = w.Write(j)
 			} else {
 				j, _ := json.Marshal(map[string]any{
 					// NO CLIENT REPORTING FOR INTERNAL ERRORS (due to security reason, we don't want to leak information about internals)
 					"tracking": nil, // TODO
 				})
-				w.Write(j)
+				_, _ = w.Write(j)
 			}
 			w.WriteHeader(code)
 			return
