@@ -13,68 +13,70 @@ import (
 	"github.com/Aize-Public/forego/ctx/log"
 )
 
-// Used to signal an operation can't be executed because the system is shutting down
-var Err = errors.New("shutdown")
+type shutter struct {
+	// channel used to broadcast a shutdown
+	ch   chan struct{}
+	ch5  chan struct{}
+	once sync.Once
+	// active services holding the shutdown to complete
+	wg sync.WaitGroup
+}
 
-// channel used to broadcast a shutdown
-var ch = make(chan struct{})
-var ch5 = make(chan struct{})
+var shutdowner = newShutter()
 
-var once sync.Once
-
-// active services holding the shutdown to complete
-var wg sync.WaitGroup
+func newShutter() *shutter {
+	return &shutter{
+		ch:  make(chan struct{}),
+		ch5: make(chan struct{}),
+	}
+}
 
 // start a global shutdown unless already started
-func Begin() {
-	once.Do(func() {
-		close(ch)
+func (this *shutter) begin() {
+	this.once.Do(func() {
+		close(this.ch)
 		go func() {
 			time.Sleep(5 * time.Second)
-			close(ch5)
+			close(this.ch5)
 		}()
 	})
 }
 
 // return a closed channel when the shutdown has started
-func Started() <-chan struct{} {
-	return ch
+func (this *shutter) started() <-chan struct{} {
+	return this.ch
 }
 
 // return a closed channel 5 seconds after the shutdown has started
-func Started5Sec() <-chan struct{} {
-	return ch5
+func (this *shutter) started5Sec() <-chan struct{} {
+	return this.ch5
 }
 
 // returns a channel that will close when the shutdown has completed
-func Done() <-chan struct{} {
+func (this *shutter) done() <-chan struct{} {
 	ch := make(chan struct{})
 	go func() {
-		wg.Wait()
+		this.wg.Wait()
 		close(ch)
 	}()
 	return ch
 }
 
 // prevent the shutdown to complete until released
-func Hold() ReleaseFn {
-	wg.Add(1)
-	return wg.Done
+func (this *shutter) hold() ReleaseFn {
+	this.wg.Add(1)
+	return this.wg.Done
 }
 
 // prevents the shutdown to complete until released, and also wait for the shutdown to start
-func HoldAndWait() ReleaseFn {
-	wg.Add(1)
-	<-ch
-	return wg.Done
+func (this *shutter) holdAndWait() ReleaseFn {
+	this.wg.Add(1)
+	<-this.ch
+	return this.wg.Done
 }
 
-type ReleaseFn func()
-
-func (fn ReleaseFn) Release() { fn() }
-
 // setup signals and wait for the shutdown to complete
-func WaitForSignal(c ctx.C, cf ctx.CancelFunc) {
+func (this *shutter) waitForSignal(c ctx.C, cf ctx.CancelFunc) {
 	sigs := make(chan os.Signal, 3)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
@@ -84,7 +86,7 @@ func WaitForSignal(c ctx.C, cf ctx.CancelFunc) {
 	for i := 0; ; {
 		log.Infof(c, "waiting for signal...")
 		select {
-		case <-Done(): // done, we can quit
+		case <-this.done(): // done, we can quit
 			log.Warnf(c, "shutdown complete: %v", c.Err())
 			return
 		case <-sigusr:
@@ -94,7 +96,7 @@ func WaitForSignal(c ctx.C, cf ctx.CancelFunc) {
 			switch i {
 			case 0:
 				log.Warnf(c, "got SIG %q: start a graceful shutdown...", sig.String())
-				Begin()
+				this.begin()
 				i++
 			case 1:
 				log.Warnf(c, "got SIG %q: canceling root context...", sig.String())
