@@ -5,3 +5,7 @@
 
 #idea
 .idea
+
+#test-cover
+profile.cov
+coverage.xml
