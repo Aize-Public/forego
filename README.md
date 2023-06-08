@@ -1,5 +1,7 @@
 # forego
 
+THIS MODULE IS STILL A WORK IN PROGRESS AND NOT READY FOR USE
+
 Go framework to simplify testing, http/ws API, authentication/authorization, etc...
 
 ## `ctx`
