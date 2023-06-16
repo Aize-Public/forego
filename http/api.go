@@ -2,12 +2,12 @@ package http
 
 import (
 	"bytes"
-	"encoding/json"
 	"net/http"
 
 	"github.com/Aize-Public/forego/api"
 	"github.com/Aize-Public/forego/ctx"
 	"github.com/Aize-Public/forego/ctx/log"
+	"github.com/Aize-Public/forego/enc"
 )
 
 type Doable interface {
@@ -46,7 +46,7 @@ func (s *Server) RegisterAPI(c ctx.C, obj Doable) error {
 		if err != nil {
 			return nil, err
 		}
-		return json.Marshal(res.Data)
+		return enc.JSON{}.Encode(c, res.Data), nil
 	}
 
 	urls := handler.URLs()

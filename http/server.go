@@ -1,6 +1,7 @@
 package http
 
 import (
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"io"
@@ -166,8 +167,16 @@ func (this *Server) HandleRequest(pattern string, f func(c ctx.C, in []byte, r *
 			return
 		}
 
-		w.WriteHeader(200)
-		_, err = w.Write(out)
+		w.Header().Add("Content-Type", "application/json") // TODO check for accept
+		if len(out) > 8192 {
+			w.Header().Add("Content-Encoding", "gzip") // TODO check for accept
+			w2 := gzip.NewWriter(w)
+			_, err = w2.Write(out)
+			w2.Close()
+			log.Debugf(c, "sending gzip %d", len(out))
+		} else {
+			_, err = w.Write(out)
+		}
 		if err != nil {
 			log.Warnf(c, "writing the response: %v", err)
 		}
