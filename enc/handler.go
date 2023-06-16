@@ -42,7 +42,7 @@ func (this Handler) Unmarshal(c ctx.C, n Node, into any) error {
 }
 
 func (this Handler) unmarshal(c ctx.C, from Node, v reflect.Value) error {
-	c = ctx.WithTag(c, "path", this.path.String())
+	//c = ctx.WithTag(c, "path", this.path.String()) // NOTE(oha): this is a bit slow because the json part
 	if this.Debugf != nil {
 		this.Debugf(c, "unmarshal( %v -> %v{%v} )", from, v.Type(), v)
 	}
@@ -68,7 +68,7 @@ func (this Handler) unmarshal(c ctx.C, from Node, v reflect.Value) error {
 		if this.Debugf != nil {
 			this.Debugf(c, "is %T", into)
 		}
-		return into.UnmarshalTree(c, from)
+		return into.UnmarshalNode(c, from)
 	case *json.RawMessage:
 		if this.Debugf != nil {
 			this.Debugf(c, "is %T", into)
@@ -171,7 +171,7 @@ func (this Handler) Marshal(c ctx.C, in any) (Node, error) {
 	case time.Time:
 		return String(in.Format(time.RFC3339Nano)), nil
 	case Marshaler:
-		return in.MarshalTree(c)
+		return in.MarshalNode(c)
 	case json.Marshaler:
 		j, err := in.MarshalJSON()
 		if err != nil {
@@ -190,8 +190,12 @@ func (this Handler) Marshal(c ctx.C, in any) (Node, error) {
 		return fromNative(in), nil
 	case reflect.Bool:
 		return Bool(v.Bool()), nil
-	case reflect.Int:
+	case reflect.Float64, reflect.Float32:
+		return Number(v.Float()), nil
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return Number(v.Int()), nil
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return Number(v.Uint()), nil
 	case reflect.String:
 		return String(v.String()), nil
 	case reflect.Pointer:

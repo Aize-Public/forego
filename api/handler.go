@@ -77,7 +77,7 @@ func newHandler[T any](c ctx.C, init T) (Handler[T], error) {
 			v := initV.Field(f.i)
 			if !v.IsZero() {
 				this.init[f.i] = v
-				log.Debugf(c, "init %v.%s = %#v", this.typ, f.tag.name, v)
+				//log.Debugf(c, "init %v.%s = %#v", this.typ, f.tag.name, v)
 			}
 		}
 	}

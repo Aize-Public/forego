@@ -22,12 +22,12 @@ type Codec interface {
 
 // objects which implements this can override how their data is unmarshaled (Expand)
 type Unmarshaler interface {
-	UnmarshalTree(ctx.C, Node) error
+	UnmarshalNode(ctx.C, Node) error
 }
 
 // obejcts which implements this can override how they are marshaled (Conflate)
 type Marshaler interface {
-	MarshalTree(ctx.C) (Node, error)
+	MarshalNode(ctx.C) (Node, error)
 }
 
 type path []any
