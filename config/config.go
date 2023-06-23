@@ -46,13 +46,13 @@ func From[T any](c ctx.C, cfg T, f func(string) string) (T, error) {
 				defVal = parts[1]
 				hasDef = true
 			default:
-				return cfg, ctx.NewErrorf(c, "unsupported tag definition for %T.%q: %q", cfg, key, def)
+				return cfg, ctx.NewErrorf(c, "unsupported tag definition for %q: %q", key, def)
 			}
 		}
 		val := f(key)
 		if val == "" {
 			if !hasDef {
-				return cfg, ctx.NewErrorf(c, "missing config for %T.%q", cfg, key)
+				return cfg, ctx.NewErrorf(c, "missing config for %q", key)
 			}
 			val = defVal
 		}
