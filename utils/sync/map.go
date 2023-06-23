@@ -1,38 +1,55 @@
 package sync
 
 import (
-	"encoding/json"
-	"fmt"
 	"sync"
+
+	"github.com/Aize-Public/forego/ctx"
+	"github.com/Aize-Public/forego/enc"
 )
 
-type Map[K any, T any] struct {
+type Map[K comparable, T any] struct {
 	m sync.Map
 }
 
-func (this *Map[K, T]) MarshalJSON() (out []byte, err error) {
-	m := map[string]json.RawMessage{}
-	this.Range(func(k K, v T) bool {
-		ks := fmt.Sprintf("%v", k)
-		m[ks], err = json.Marshal(v)
-		return err == nil
+var _ enc.Marshaler = (*Map[string, any])(nil)
+var _ enc.Unmarshaler = (*Map[string, any])(nil)
+
+func (this *Map[K, V]) Map() map[K]V {
+	m := map[K]V{}
+	this.Range(func(k K, v V) bool {
+		m[k] = v
+		return true
 	})
-	if err != nil {
-		return
-	}
-	return json.Marshal(m)
+	return m
 }
 
-func (this *Map[K, T]) Get(key K) T {
+func (this *Map[K, V]) MarshalNode(c ctx.C) (n enc.Node, err error) {
+	m := this.Map()
+	return enc.Marshal(c, m)
+}
+
+func (this *Map[K, V]) UnmarshalNode(c ctx.C, n enc.Node) error {
+	var m map[K]V
+	err := enc.Unmarshal(c, n, &m)
+	if err != nil {
+		return err
+	}
+	for k, v := range m {
+		this.Store(k, v)
+	}
+	return nil
+}
+
+func (this *Map[K, V]) Get(key K) V {
 	val, _ := this.m.Load(key)
 	if val == nil {
-		var zero T
+		var zero V
 		return zero
 	}
-	return val.(T)
+	return val.(V)
 }
 
-func (this *Map[K, T]) IsEmpty() bool {
+func (this *Map[K, V]) IsEmpty() bool {
 	empty := true
 	this.m.Range(func(_, _ any) bool {
 		empty = false
@@ -41,52 +58,52 @@ func (this *Map[K, T]) IsEmpty() bool {
 	return empty
 }
 
-func (this *Map[K, T]) Load(key K) (T, bool) {
+func (this *Map[K, V]) Load(key K) (V, bool) {
 	val, ok := this.m.Load(key)
 	if val == nil {
-		var zero T
+		var zero V
 		return zero, ok
 	}
-	return val.(T), ok
+	return val.(V), ok
 }
 
-func (this *Map[K, T]) GetOrStore(key K, val T) T {
+func (this *Map[K, V]) GetOrStore(key K, val V) V {
 	out, _ := this.m.LoadOrStore(key, val)
 	if out == nil {
-		var zero T
+		var zero V
 		return zero
 	}
-	return out.(T)
+	return out.(V)
 }
 
-func (this *Map[K, T]) LoadOrStore(key K, val T) (T, bool) {
+func (this *Map[K, V]) LoadOrStore(key K, val V) (V, bool) {
 	out, loaded := this.m.LoadOrStore(key, val)
 	if out == nil {
-		var zero T
+		var zero V
 		return zero, loaded
 	}
-	return out.(T), loaded
+	return out.(V), loaded
 }
 
-func (this *Map[K, T]) Store(key K, val T) {
+func (this *Map[K, V]) Store(key K, val V) {
 	this.m.Store(key, val)
 }
 
-func (this *Map[K, T]) Range(f func(key K, val T) bool) {
+func (this *Map[K, V]) Range(f func(key K, val V) bool) {
 	this.m.Range(func(key, val any) bool {
-		return f(key.(K), val.(T))
+		return f(key.(K), val.(V))
 	})
 }
 
-func (this *Map[K, T]) Delete(key K) {
+func (this *Map[K, V]) Delete(key K) {
 	this.m.Delete(key)
 }
 
-func (this *Map[K, T]) LoadAndDelete(key K) (T, bool) {
+func (this *Map[K, V]) LoadAndDelete(key K) (V, bool) {
 	v, loaded := this.m.LoadAndDelete(key)
 	if v == nil {
-		var zero T
+		var zero V
 		return zero, loaded
 	}
-	return v.(T), loaded
+	return v.(V), loaded
 }
