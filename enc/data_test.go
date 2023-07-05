@@ -107,6 +107,14 @@ func TestAdvancedData(t *testing.T) {
 	}
 	{
 		x := struct {
+			TL []int
+		}{
+			TL: []int{},
+		}
+		testData(c, t, x)
+	}
+	{
+		x := struct {
 			TB   bool
 			TS   string
 			TI   int
