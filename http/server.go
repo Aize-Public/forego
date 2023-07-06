@@ -53,6 +53,9 @@ func NewServer(c ctx.C) *Server {
 			Elapsed: time.Since(t0),
 		})
 	})
+	this.mux.HandleFunc("/live", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(204)
+	})
 	this.mux.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(204)
 	})
@@ -168,12 +171,12 @@ func (this *Server) HandleRequest(pattern string, f func(c ctx.C, in []byte, r *
 		}
 
 		w.Header().Add("Content-Type", "application/json") // TODO check for accept
-		if len(out) > 8192 {
-			w.Header().Add("Content-Encoding", "gzip") // TODO check for accept
+		if len(out) > 16*1024 {
+			w.Header().Add("Content-Encoding", "gzip")
 			w2 := gzip.NewWriter(w)
 			_, err = w2.Write(out)
 			w2.Close()
-			log.Debugf(c, "sending gzip %d", len(out))
+			//log.Debugf(c, "sending gzip %d", len(out))
 		} else {
 			_, err = w.Write(out)
 		}
