@@ -13,7 +13,7 @@ type HitMiss string
 
 const (
 	HIT  HitMiss = "hit"
-	MISS         = "miss"
-	ERR          = "err"
-	NO           = "no" // no cache
+	MISS HitMiss = "miss"
+	ERR  HitMiss = "err"
+	NO   HitMiss = "no" // no cache
 )
