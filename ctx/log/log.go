@@ -11,12 +11,14 @@ import (
 )
 
 type Line struct {
-	Level   string              `json:"level,omitempty"`
-	Src     string              `json:"src,omitempty"`
-	Time    time.Time           `json:"time"`
-	Message string              `json:"message"`
-	Tags    map[string]ctx.JSON `json:"tags,omitempty"`
+	Level   string    `json:"level,omitempty"`
+	Src     string    `json:"src,omitempty"`
+	Time    time.Time `json:"time"`
+	Message string    `json:"message"`
+	Tags    Tags      `json:"tags,omitempty"`
 }
+
+type Tags map[string]ctx.JSON
 
 func (this Line) JSON() string {
 	j, err := json.Marshal(this)
@@ -43,10 +45,12 @@ type loggerValue struct {
 	log    func(Line)
 }
 
+// return a new context with a custom logger attached to it
 func WithLogger(c ctx.C, logger func(Line)) ctx.C {
 	return context.WithValue(c, loggerKey{}, loggerValue{func() {}, logger})
 }
 
+// same as WithLogger(), but it has an extra helper function mostly used for testing
 func WithLoggerAndHelper(c ctx.C, logger func(Line), helper func()) ctx.C {
 	return context.WithValue(c, loggerKey{}, loggerValue{helper, logger})
 }
@@ -114,12 +118,15 @@ func (at Line) formatf(c ctx.C, f string, args ...any) Line {
 	if at.Time.IsZero() {
 		at.Time = time.Now()
 	}
-	at.Message = fmt.Sprintf(f, args...)
 	at.Tags = tags(c)
 LOOP:
 	for i := 0; i < len(args); i++ {
 		switch arg := args[i].(type) {
+		case Loggable:
+			// if it implements Loggable, replace it with the return value and allow manipulation of tags
+			args[i] = arg.LogAs(&at.Tags)
 		case error:
+			// since errors can be wrapped, we need to unrwap them into ctx.Error to find the stack trace
 			m := map[string]any{
 				"error": arg.Error(),
 			}
@@ -134,5 +141,10 @@ LOOP:
 			break LOOP
 		}
 	}
+	at.Message = fmt.Sprintf(f, args...)
 	return at
+}
+
+type Loggable interface {
+	LogAs(*Tags) any
 }
