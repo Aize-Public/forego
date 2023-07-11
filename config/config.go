@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/Aize-Public/forego/ctx"
-	"github.com/Aize-Public/forego/ctx/log"
 )
 
 func Must[T any](c ctx.C, cfg T, f func(string) string) T {
@@ -61,7 +60,7 @@ func From[T any](c ctx.C, cfg T, f func(string) string) (T, error) {
 		if err != nil {
 			return cfg, err
 		}
-		log.Debugf(c, "config: %q=%#v", key, fv)
+		//log.Debugf(c, "config: %q=%#v", key, fv)
 	}
 	return cfg, nil
 }
