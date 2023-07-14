@@ -19,18 +19,20 @@ type Handler[T any] struct {
 	out  []field
 }
 
+// helper for NewHandler().Server()
 func NewServer[T any](c ctx.C, init T) (Server[T], error) {
-	h, err := newHandler(c, init)
+	h, err := NewHandler(c, init)
 	return Server[T]{h}, err
 }
 
-func NewClient[T any](c ctx.C, obj T) (Client[T], error) {
-	h, err := newHandler(c, obj)
+// helper for NewHandler().Client()
+func NewClient[T any](c ctx.C, init T) (Client[T], error) {
+	h, err := NewHandler(c, init)
 	return Client[T]{h}, err
 }
 
 // we accept either Type or *Type
-func newHandler[T any](c ctx.C, init T) (Handler[T], error) {
+func NewHandler[T any](c ctx.C, init T) (Handler[T], error) {
 	log.Debugf(c, "NewHandler[%T]", init)
 	initV := reflect.ValueOf(init)
 	this := Handler[T]{
@@ -85,6 +87,18 @@ func newHandler[T any](c ctx.C, init T) (Handler[T], error) {
 	return this, nil
 }
 
+// return the path of the first url, or the object name if no url is given
+func (this *Handler[T]) Path() string {
+	if len(this.urls) > 0 {
+		return this.urls[0].Path
+	}
+	return this.typ.Name()
+}
+
+func (this *Handler[T]) Type() reflect.Type {
+	return this.typ
+}
+
 func (this *Handler[T]) URL() *url.URL {
 	if len(this.urls) > 0 {
 		return this.urls[0]
@@ -92,8 +106,27 @@ func (this *Handler[T]) URL() *url.URL {
 	return nil
 }
 
+func (this *Handler[T]) Paths() []string {
+	if len(this.urls) == 0 {
+		return []string{this.typ.Name()}
+	}
+	var out []string
+	for _, url := range this.urls {
+		out = append(out, url.Path)
+	}
+	return out
+}
+
 func (this *Handler[T]) URLs() []*url.URL {
 	return this.urls
+}
+
+func (this *Handler[T]) Server() Server[T] {
+	return Server[T]{*this}
+}
+
+func (this *Handler[T]) Client() Client[T] {
+	return Client[T]{*this}
 }
 
 type field struct {

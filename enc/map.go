@@ -1,6 +1,7 @@
 package enc
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -20,6 +21,13 @@ func (this Map) native() any {
 		out[k] = n.native()
 	}
 	return out
+}
+
+func (this Map) MarshalJSON() ([]byte, error) {
+	if this == nil {
+		return []byte(`{}`), nil
+	}
+	return json.Marshal(map[string]Node(this))
 }
 
 func (this Map) String() string {

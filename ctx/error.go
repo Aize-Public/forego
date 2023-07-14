@@ -6,11 +6,25 @@ import (
 	"runtime"
 )
 
+/*
+creates a new error using the given format and argument
+if any argument is an error, it will be wrapped as per fmt.Errorf()
+the error is then given a stack trace and context unless it already has one
+*/
 func NewErrorf(c C, f string, args ...any) error {
 	return maybeWrap(c, fmt.Errorf(f, args...))
 }
 
+// Obsolete: use WrapError
 func NewError(c C, err error) error {
+	return maybeWrap(c, err)
+}
+
+// if the given error is nil, returns nil. Otherwise check if it already was wrapped into a ctx.Error and wrap it if not
+func WrapError(c C, err error) error {
+	if err == nil {
+		return nil
+	}
 	return maybeWrap(c, err)
 }
 

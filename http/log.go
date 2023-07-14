@@ -4,7 +4,11 @@ import (
 	"bufio"
 	"net"
 	"net/http"
+	"strings"
 	"time"
+
+	"github.com/Aize-Public/forego/ctx/log"
+	"github.com/Aize-Public/forego/utils"
 )
 
 type Stat struct {
@@ -52,6 +56,11 @@ type responseHijacker struct {
 var _ http.Hijacker = &responseHijacker{}
 
 func (r *response) WriteHeader(code int) {
+	if r.code != 0 {
+		stack := utils.Stack(1, 10)
+		log.Warnf(nil, "duplicate WriteHeader() at %s", strings.Join(stack, "\n"))
+		return
+	}
 	r.code = code
 	r.ResponseWriter.WriteHeader(code)
 }

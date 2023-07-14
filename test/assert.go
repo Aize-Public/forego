@@ -6,8 +6,9 @@ import (
 	"github.com/Aize-Public/forego/utils/ast"
 )
 
+// var ok = "✅  "
 var ok = "  ✔ "
-var fail = " ❌ "
+var ko = "❌  "
 
 func OK(t *testing.T, f string, args ...any) {
 	t.Helper()
@@ -16,7 +17,7 @@ func OK(t *testing.T, f string, args ...any) {
 
 func Fail(t *testing.T, f string, args ...any) {
 	t.Helper()
-	t.Fatalf(fail+f, args...)
+	t.Fatalf(ko+f, args...)
 }
 
 func Assert(t *testing.T, cond bool) {

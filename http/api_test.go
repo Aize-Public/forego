@@ -13,11 +13,15 @@ import (
 	"github.com/Aize-Public/forego/test"
 )
 
+type UID string
+
 type Inc struct {
-	R       api.Request `url:"/inc"`
-	Name    string      `api:"in,out" json:"name"`
-	Amount  int         `api:"in" json:"amount"`
-	Current int         `api:"out" json:"current"`
+	R   api.Request `url:"/inc"`
+	UID UID         `api:"auth"`
+
+	Name    string `api:"in,out" json:"name"`
+	Amount  int    `api:"in" json:"amount"`
+	Current int    `api:"out" json:"current"`
 
 	State map[string]int
 }
@@ -47,8 +51,8 @@ func TestAPI(t *testing.T) {
 		w := &ResponseWriter{}
 		s.Mux().ServeHTTP(w, req)
 		res := w.Buf.String()
-		test.Assert(t, w.Code == 200)
-		t.Logf("res: %s", res)
+		t.Logf("res: %d %s", w.Code, res)
+		test.EqualsGo(t, 200, w.Code)
 		test.Contains(t, res, `:3,`)
 	}
 
@@ -89,6 +93,9 @@ func (this *ResponseWriter) Header() gohttp.Header {
 }
 
 func (this *ResponseWriter) Write(b []byte) (int, error) {
+	if this.Code == 0 {
+		this.WriteHeader(200)
+	}
 	return this.Buf.Write(b)
 }
 

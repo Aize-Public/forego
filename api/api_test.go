@@ -15,11 +15,11 @@ func TestAPI(t *testing.T) {
 	alice := UID("alice")
 
 	t.Logf("handler...")
-	ser, err := api.NewServer(c, &WordCount{})
+	h, err := api.NewHandler(c, &WordCount{})
 	test.NoError(t, err)
 
-	cli, err := api.NewClient(c, &WordCount{})
-	test.NoError(t, err)
+	ser := h.Server()
+	cli := h.Client()
 
 	obj := WordCount{
 		Str: "foo bar",

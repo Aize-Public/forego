@@ -6,6 +6,14 @@ import (
 	"github.com/Aize-Public/forego/ctx"
 )
 
+func MustMarshal(c ctx.C, from any) Node {
+	n, err := Marshal(c, from)
+	if err != nil {
+		panic(err)
+	}
+	return n
+}
+
 func MustMarshalJSON(c ctx.C, from any) []byte {
 	n, err := Marshal(c, from)
 	if err != nil {
