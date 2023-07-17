@@ -10,6 +10,10 @@ func WithCancel(c C) (C, CancelFunc) {
 	return c, CancelFunc(cf)
 }
 
+func WithValue(c C, key, val any) C {
+	return context.WithValue(c, key, val)
+}
+
 func TODO() C {
 	return context.TODO()
 }
