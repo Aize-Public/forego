@@ -35,6 +35,14 @@ type Error struct {
 	C     C
 }
 
+func (err Error) String() string {
+	return fmt.Sprintf("%+v", err.error)
+}
+
+func (err Error) GoString() string {
+	return fmt.Sprintf("%#v", err.error)
+}
+
 func (err Error) Unwrap() error {
 	return err.error
 }
