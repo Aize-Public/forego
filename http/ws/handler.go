@@ -15,11 +15,14 @@ Handler is used to define a websocket.
 It tells on which path to mount it, what to do on connect and which object should be expected to be processed
 */
 type Handler[State any] struct {
-	// optional callback fired on connection.
+	// optional callback fired on connection. No error can be returned, but you are free to close the connection if needed
 	OnConnect func(c ctx.C, conn *Conn[State])
 
 	// fired when a shutdown start, if empty it will send `"shutdown"` to the client
 	OnShutdown func(c ctx.C, conn *Conn[State])
+
+	// fire after close
+	OnExit func(c ctx.C, conn *Conn[State])
 
 	resolver map[string]api.Handler[Op[State]] // TODO(oha) change to something specific to websocket, e.g. that allows parallelism or other flows
 	impl     websocket.Server

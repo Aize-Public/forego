@@ -41,8 +41,8 @@ func TestWS(t *testing.T) {
 type Sleep struct {
 }
 
-func (this *Sleep) Do(c ctx.C, state chan bool) error {
-	<-state // wait for it
+func (this *Sleep) Do(c ctx.C, r ws.Request[chan bool]) error {
+	<-r.State // wait for it
 	return nil
 }
 

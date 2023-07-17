@@ -61,12 +61,12 @@ func (this *Client[State]) onRecv(c ctx.C, n enc.Node) error {
 
 // send the request to the server on a new channel, and use the given callback function for any reply
 // returns an object which can then be closed
-func (this *Client[State]) Request(c ctx.C, req Op[State], fn func(ctx.C, Op[State]) error) (*Request[State], error) {
+func (this *Client[State]) Request(c ctx.C, req Op[State], fn func(ctx.C, Op[State]) error) (*cliRequest[State], error) {
 	h, err := api.NewClient(c, req)
 	if err != nil {
 		return nil, err
 	}
-	r := &Request[State]{
+	r := &cliRequest[State]{
 		h:   h,
 		ch:  uuid.NewString(),
 		cli: this,
@@ -88,18 +88,18 @@ func (this *Client[State]) Request(c ctx.C, req Op[State], fn func(ctx.C, Op[Sta
 	return r, r.send(c, req)
 }
 
-type Request[State any] struct {
+type cliRequest[State any] struct {
 	h   api.Client[Op[State]]
 	ch  string
 	cli *Client[State]
 }
 
-func (this Request[State]) Close() error {
+func (this cliRequest[State]) Close() error {
 	delete(this.cli.handlers, this.ch)
 	return nil
 }
 
-func (this Request[State]) send(c ctx.C, op Op[State]) error {
+func (this cliRequest[State]) send(c ctx.C, op Op[State]) error {
 	req := api.JSON{}
 	err := this.h.Send(c, op, &req)
 	if err != nil {

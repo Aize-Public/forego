@@ -13,7 +13,7 @@ import (
 
 // A request sent from a client to the websocket
 type Op[State any] interface {
-	Do(ctx.C, State) error
+	Do(ctx.C, Request[State]) error
 }
 
 // The frame used internally to route the custom data using Path anc Channel

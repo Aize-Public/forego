@@ -18,7 +18,7 @@ type Conn[State any] struct {
 	h      *Handler[State]
 	m      sync.Mutex
 	sid    string
-	uid    enc.Node
+	UID    enc.Node
 	closed bool
 	ws     ws
 
@@ -27,12 +27,18 @@ type Conn[State any] struct {
 	onClose []func()
 }
 
+func (this *Conn[State]) SID() string {
+	return this.sid
+}
+
 func (this *Conn[State]) OnClose(c ctx.C, f func()) {
 	this.m.Lock()
 	defer this.m.Unlock()
 	this.onClose = append(this.onClose, f)
 }
 
+// Send a generic payload (no frame is added, which means the client won't recognize this as a reply to a channel or anything like that)
+// most likely you don't want to use this
 func (this *Conn[State]) Send(c ctx.C, obj any) error {
 	this.m.Lock()
 	defer this.m.Unlock()
@@ -123,13 +129,16 @@ func (this *Conn[State]) onData(c ctx.C, n enc.Node) error {
 	}
 	req := api.JSON{
 		Data: f.Data,
-		UID:  this.uid,
+		UID:  this.UID,
 	}
 	obj, err := s.Server().Recv(c, &req)
 	if err != nil {
 		return err
 	}
-	err = obj.Do(c, this.State)
+	err = obj.Do(c, Request[State]{
+		Conn:    this,
+		Channel: f.Channel,
+	})
 	if err != nil {
 		return err
 	}
@@ -160,4 +169,30 @@ func (this *Conn[State]) Close(c ctx.C, reason string) error {
 	// TODO send reason
 	err := this.ws.Close() // code 1000
 	return ctx.WrapError(c, err)
+}
+
+type Request[State any] struct {
+	*Conn[State]
+	Channel string
+}
+
+// send a reply to the same channel
+func (this Request[State]) Reply(c ctx.C, obj any) error {
+	n, err := enc.Marshal(c, obj)
+	if err != nil {
+		return err
+	}
+	return this.Conn.Send(c, Frame{
+		Channel: this.Channel,
+		Data:    n.(enc.Map), // TODO(oha): can we make this generic?
+	})
+}
+
+// send an application error to the client on the same channel
+func (this Request[State]) Error(c ctx.C, err error) error {
+	return this.Conn.Send(c, Frame{
+		Channel:  this.Channel,
+		Error:    err.Error(),
+		Tracking: ctx.GetTracking(c),
+	})
 }
