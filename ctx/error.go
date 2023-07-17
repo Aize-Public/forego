@@ -17,6 +17,9 @@ func NewErrorf(c C, f string, args ...any) error {
 
 // Obsolete: use WrapError
 func NewError(c C, err error) error {
+	if err != nil {
+		panic("NewError(nil) not allowed")
+	}
 	return maybeWrap(c, err)
 }
 
@@ -33,14 +36,6 @@ type Error struct {
 	error
 	Stack []string
 	C     C
-}
-
-func (err Error) String() string {
-	return fmt.Sprintf("%+v", err.error)
-}
-
-func (err Error) GoString() string {
-	return fmt.Sprintf("%#v", err.error)
 }
 
 func (err Error) Unwrap() error {
