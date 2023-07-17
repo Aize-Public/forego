@@ -146,6 +146,19 @@ func TestMarshal(t *testing.T) {
 	}
 }
 
+func TestOmitEmpty(t *testing.T) {
+	c := test.Context(t)
+
+	type x struct {
+		S string  `json:"fieldS,omitempty"`
+		I int     `json:"fieldI,omitempty"`
+		F float64 `json:"fieldF,omitempty"`
+		X any     `json:"fieldX,omitempty"`
+	}
+	j := enc.MustMarshalJSON(c, x{})
+	test.NotContainsJSON(t, j, "field")
+}
+
 func TestCompat(t *testing.T) {
 	c := test.Context(t)
 	h := enc.Handler{

@@ -268,8 +268,22 @@ func (this Handler) Marshal(c ctx.C, in any) (Node, error) {
 		if err != nil {
 			return nil, err
 		}
-		p := Pair{tag.Name, tag.JSON, fn}
-		out = append(out, p)
+		switch fn := fn.(type) {
+		case Nil:
+			if !tag.OmitEmpty {
+				out = append(out, Pair{tag.Name, tag.JSON, fn})
+			}
+		case String:
+			if !tag.OmitEmpty || fn != "" {
+				out = append(out, Pair{tag.Name, tag.JSON, fn})
+			}
+		case Number:
+			if !tag.OmitEmpty || fn != 0.0 {
+				out = append(out, Pair{tag.Name, tag.JSON, fn})
+			}
+		default:
+			out = append(out, Pair{tag.Name, tag.JSON, fn})
+		}
 	}
 	return out, nil
 }
