@@ -1,6 +1,7 @@
 package test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/Aize-Public/forego/utils/ast"
@@ -28,3 +29,5 @@ func Assert(t *testing.T, cond bool) {
 		Fail(t, "%s", stringy{ast.Assignment(0, 1)})
 	}
 }
+
+var ExpectedError = errors.New("expected error")
