@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/Aize-Public/forego/ctx"
@@ -21,6 +22,13 @@ type Server struct {
 
 	// called when a request is done, by default it logs and generate metrics
 	OnResponse func(Stat)
+
+	ready int32
+}
+
+func (this *Server) SetReady(code int) {
+	log.Infof(nil, "ready set to %d", code)
+	atomic.StoreInt32(&this.ready, int32(code))
 }
 
 func NewServer(c ctx.C) *Server {
@@ -57,7 +65,7 @@ func NewServer(c ctx.C) *Server {
 		w.WriteHeader(204)
 	})
 	this.mux.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(204)
+		w.WriteHeader(int(atomic.LoadInt32(&this.ready)))
 	})
 	return this
 }
