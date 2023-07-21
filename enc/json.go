@@ -39,16 +39,25 @@ func UnmarshalJSON(c ctx.C, j []byte, into any) error {
 }
 
 type JSON struct {
+	Indent bool
 }
 
 var _ Codec = JSON{}
 
 func (this JSON) Encode(c ctx.C, n Node) []byte {
-	j, err := json.Marshal(n)
-	if err != nil {
-		panic(err)
+	if this.Indent {
+		j, err := json.MarshalIndent(n, "", "  ")
+		if err != nil {
+			panic(err)
+		}
+		return j
+	} else {
+		j, err := json.Marshal(n)
+		if err != nil {
+			panic(err)
+		}
+		return j
 	}
-	return j
 }
 
 func mustJSON(in any) []byte {
