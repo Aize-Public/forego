@@ -118,7 +118,6 @@ type lruEntry[K comparable, V any] struct {
 	val  V
 	last time.Time
 	size int
-	m    sync.Mutex
 }
 
 func (this *lruHeap[K, V]) Len() int {

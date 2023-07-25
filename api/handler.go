@@ -58,7 +58,7 @@ func NewHandler[T any](c ctx.C, init T) (Handler[T], error) {
 		if err != nil {
 			return this, err
 		}
-		log.Debugf(c, "%v.%s %+v", this.typ, ft.Name, tag)
+		//log.Debugf(c, "%v.%s %+v", this.typ, ft.Name, tag)
 		f := field{i, tag}
 		if tag.auth {
 			if this.auth != nil {

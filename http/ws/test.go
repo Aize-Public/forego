@@ -42,7 +42,6 @@ func (this *Handler[State]) TestClient(c ctx.C) *TestClient[State] {
 
 type TestClient[State any] struct {
 	*Client[State]
-	ws      ws
 	Conn    *Conn[State]
 	cli2ser chan enc.Node
 	ser2cli chan enc.Node

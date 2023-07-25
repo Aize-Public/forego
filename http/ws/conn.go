@@ -106,11 +106,15 @@ func (this *Conn[State]) loop(c ctx.C) {
 			c = ctx.WithTracking(c, "")
 			err := this.onData(c, n)
 			if err != nil {
-				this.Send(c, Frame{
+				log.Warnf(c, "can't understand the client: %v", err)
+				err = this.Send(c, Frame{
 					Error:    err.Error(), // TODO only for 4xx? close on others?
 					Tracking: ctx.GetTracking(c),
 				})
-				log.Warnf(c, "can't understand the client: %v", err)
+				if err != nil {
+					log.Warnf(c, "can't write: %v", err)
+					return
+				}
 			}
 		}
 	}
@@ -128,19 +132,21 @@ func (this *Conn[State]) onData(c ctx.C, n enc.Node) error {
 		return ctx.NewErrorf(c, "invalid path %q", f.Path)
 	}
 	req := api.JSON{
-		Data: f.Data,
+		Data: f.Data.(enc.Map), // TODO FIXME
 		UID:  this.UID,
 	}
 	obj, err := s.Server().Recv(c, &req)
 	if err != nil {
 		return err
 	}
-	err = obj.Do(c, Request[State]{
+	r := Request[State]{
 		Conn:    this,
 		Channel: f.Channel,
-	})
+	}
+	err = obj.Do(c, r)
 	if err != nil {
-		return err
+		_ = r.Error(c, err)
+		return nil
 	}
 	res := api.JSON{}
 	err = s.Server().Send(c, obj, &res)
@@ -184,7 +190,7 @@ func (this Request[State]) Reply(c ctx.C, obj any) error {
 	}
 	return this.Conn.Send(c, Frame{
 		Channel: this.Channel,
-		Data:    n.(enc.Map), // TODO(oha): can we make this generic?
+		Data:    n, // TODO(oha): can we make this generic?
 	})
 }
 

@@ -40,6 +40,7 @@ func (s *Server) RegisterAPI(c ctx.C, obj Doable) error {
 		if err != nil {
 			return nil, err
 		}
+		log.Debugf(c, "API %#v", obj)
 
 		res := &api.JSON{}
 		err = handler.Send(c, obj, res)

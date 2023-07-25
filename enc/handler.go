@@ -163,7 +163,6 @@ func Marshal(c ctx.C, in any) (Node, error) {
 	return Handler{}.Marshal(c, in)
 }
 
-// TODO(oha) no reason to have the Handler to Unmarshal()
 func (this Handler) Marshal(c ctx.C, in any) (Node, error) {
 	switch in := in.(type) {
 	case nil:

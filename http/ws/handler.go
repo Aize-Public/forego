@@ -35,7 +35,7 @@ var _ gohttp.Handler = (*Handler[any])(nil)
 func New[State any](c ctx.C, objs ...Op[State]) (*Handler[State], error) {
 	this := &Handler[State]{
 		OnShutdown: func(c ctx.C, conn *Conn[State]) {
-			conn.Send(c, "shutdown")
+			_ = conn.Send(c, "shutdown")
 		},
 	}
 

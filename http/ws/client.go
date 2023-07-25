@@ -77,7 +77,7 @@ func (this *Client[State]) Request(c ctx.C, req Op[State], fn func(ctx.C, Op[Sta
 			return ctx.NewErrorf(c, "unexpected path %q", f.Path)
 		}
 		j := &api.JSON{
-			Data: f.Data,
+			Data: f.Data.(enc.Map), // TODO FIXME
 		}
 		err := h.Client().Recv(c, j, req)
 		if err != nil {

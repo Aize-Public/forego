@@ -18,11 +18,11 @@ type Op[State any] interface {
 
 // The frame used internally to route the custom data using Path anc Channel
 type Frame struct {
-	Path     string  `json:"path,omitempty"`
-	Channel  string  `json:"channel,omitempty"`
-	Data     enc.Map `json:"data,omitempty"`
-	Error    string  `json:"error,omitempty"`
-	Tracking string  `json:"tracking-id,omitempty"`
+	Path     string   `json:"path,omitempty"`
+	Channel  string   `json:"channel,omitempty"`
+	Data     enc.Node `json:"data,omitempty"`
+	Error    string   `json:"error,omitempty"`
+	Tracking string   `json:"tracking-id,omitempty"`
 }
 
 ///////////////////////////////////////////////

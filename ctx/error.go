@@ -17,7 +17,7 @@ func NewErrorf(c C, f string, args ...any) error {
 
 // Obsolete: use WrapError
 func NewError(c C, err error) error {
-	if err != nil {
+	if err == nil {
 		panic("NewError(nil) not allowed")
 	}
 	return maybeWrap(c, err)

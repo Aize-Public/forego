@@ -72,7 +72,7 @@ func (this JSON) Decode(c ctx.C, data []byte) (Node, error) {
 	var obj any
 	err := json.Unmarshal(data, &obj)
 	if err != nil {
-		return nil, ctx.NewError(c, err)
+		return nil, ctx.NewErrorf(c, "%w", err)
 	}
 	return fromNative(obj), nil
 }

@@ -6,6 +6,11 @@ import (
 	"testing"
 )
 
+func NotContains(t *testing.T, str, pattern string) {
+	t.Helper()
+	contains(str, pattern).false(t)
+}
+
 func Contains(t *testing.T, str, pattern string) {
 	t.Helper()
 	contains(str, pattern).true(t)
