@@ -43,6 +43,7 @@ func (this Handler) Unmarshal(c ctx.C, n Node, into any) error {
 
 func (this Handler) unmarshal(c ctx.C, from Node, v reflect.Value) error {
 	//c = ctx.WithTag(c, "path", this.path.String()) // NOTE(oha): this is a bit slow because the json part
+	//defer log.Debugf(c, "unmarshal( %T %+v => %v{%+v} )", from, from, v.Type(), v)
 	if this.Debugf != nil {
 		this.Debugf(c, "unmarshal( %v -> %v{%v} )", from, v.Type(), v)
 	}
@@ -129,6 +130,7 @@ func (this Handler) unmarshal(c ctx.C, from Node, v reflect.Value) error {
 		}
 	}
 
+	log.Debugf(c, "OHA %T => %v", from, v.Type())
 	if this.Debugf != nil {
 		this.Debugf(c, "normal type: %v, use generic %T.unmarshalInto()", v.Type(), from)
 	}
@@ -190,11 +192,11 @@ func (this Handler) Marshal(c ctx.C, in any) (Node, error) {
 	case reflect.Bool:
 		return Bool(v.Bool()), nil
 	case reflect.Float64, reflect.Float32:
-		return Number(v.Float()), nil
+		return Float(v.Float()), nil
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return Number(v.Int()), nil
+		return Integer(v.Int()), nil
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return Number(v.Uint()), nil
+		return Integer(v.Uint()), nil
 	case reflect.String:
 		return String(v.String()), nil
 	case reflect.Pointer:
@@ -240,7 +242,11 @@ func (this Handler) Marshal(c ctx.C, in any) (Node, error) {
 				switch nk := nk.(type) {
 				case String:
 					m[string(nk)] = n
-				case Number:
+				case Integer:
+					m[fmt.Sprint(nk)] = n
+				case Float:
+					m[fmt.Sprint(nk)] = n
+				case Num:
 					m[fmt.Sprint(nk)] = n
 				default:
 					return nil, ctx.NewErrorf(c, "can't marshal %v as map key", kv.Type())
@@ -276,8 +282,16 @@ func (this Handler) Marshal(c ctx.C, in any) (Node, error) {
 			if !tag.OmitEmpty || fn != "" {
 				out = append(out, Pair{tag.Name, tag.JSON, fn})
 			}
-		case Number:
+		case Integer:
+			if !tag.OmitEmpty || fn != 0 {
+				out = append(out, Pair{tag.Name, tag.JSON, fn})
+			}
+		case Float:
 			if !tag.OmitEmpty || fn != 0.0 {
+				out = append(out, Pair{tag.Name, tag.JSON, fn})
+			}
+		case Num:
+			if !tag.OmitEmpty || fn != "" {
 				out = append(out, Pair{tag.Name, tag.JSON, fn})
 			}
 		default:

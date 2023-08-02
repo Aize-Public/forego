@@ -10,10 +10,26 @@ import (
 	"github.com/Aize-Public/forego/test"
 )
 
+func TestStruct(t *testing.T) {
+	c := test.Context(t)
+	type X struct {
+		S string  `json:"s"`
+		I int     `json:"i"`
+		F float64 `json:"f"`
+		A any     `json:"a"`
+	}
+	x := X{S: "str", I: 42, F: 3.14, A: 3}
+	n, err := enc.Marshal(c, x)
+	test.NoError(t, err)
+	test.ContainsGo(t, n, `42`)
+	j := enc.JSON{}.Encode(c, n)
+	test.EqualsStr(t, `{"s":"str","i":42,"f":3.14,"a":3}`, string(j))
+}
+
 func TestJSON(t *testing.T) {
 	c := test.Context(t)
 	codec := &enc.JSON{}
-	check := func(j string, nodeIn enc.Node) {
+	check := func(t *testing.T, j string, nodeIn enc.Node) {
 		t.Helper()
 		t.Logf("%s <=> %#v", j, nodeIn)
 		jIn := []byte(j)
@@ -24,7 +40,7 @@ func TestJSON(t *testing.T) {
 		test.EqualsGo(t, nodeIn, nodeOut)
 	}
 	// only check from node to json
-	checkLeft := func(j string, nodeIn enc.Node) {
+	checkLeft := func(t *testing.T, j string, nodeIn enc.Node) {
 		t.Helper()
 		t.Logf("%s <== %#v", j, nodeIn)
 		jIn := []byte(j)
@@ -33,20 +49,22 @@ func TestJSON(t *testing.T) {
 	}
 
 	t.Run("scalars", func(t *testing.T) {
-		check(`null`, enc.Nil{})
-		check(`1`, enc.Number(1))
-		check(`3.14`, enc.Number(3.14))
-		check(`true`, enc.Bool(true))
-		check(`"foo"`, enc.String("foo"))
-		check(`"\""`, enc.String(`"`))
-		check(`"\\"`, enc.String(`\`))
-		check(`"\\\""`, enc.String(`\"`))
+		check(t, `null`, enc.Nil{})
+		checkLeft(t, `1`, enc.Integer(1))
+		checkLeft(t, `3.14`, enc.Float(3.14))
+		check(t, `3.14`, enc.Num(`3.14`))
+		check(t, `3`, enc.Num(`3`))
+		check(t, `true`, enc.Bool(true))
+		check(t, `"foo"`, enc.String("foo"))
+		check(t, `"\""`, enc.String(`"`))
+		check(t, `"\\"`, enc.String(`\`))
+		check(t, `"\\\""`, enc.String(`\"`))
 	})
 
 	t.Run("maps", func(t *testing.T) {
-		check(`{}`, enc.Map{})
-		check(`{"one":3.14}`, enc.Map{"one": enc.Number(3.14)})
-		m := enc.Map{"one": enc.Number(1), "nil": enc.Nil{}, "foo": enc.String("bar")}
+		check(t, `{}`, enc.Map{})
+		checkLeft(t, `{"one":3.14}`, enc.Map{"one": enc.Float(3.14)})
+		m := enc.Map{"one": enc.Integer(1), "nil": enc.Nil{}, "foo": enc.String("bar")}
 		j := codec.Encode(c, m)
 		test.ContainsJSON(t, j, `"nil":null`)
 		test.ContainsJSON(t, j, `"foo":"bar"`)
@@ -54,20 +72,20 @@ func TestJSON(t *testing.T) {
 	})
 
 	t.Run("pairs", func(t *testing.T) {
-		checkLeft(`{}`, enc.Pairs{})
-		checkLeft(`{"b":1,"a":2,"":null}`, enc.Pairs{{"b", "b", enc.Number(1)}, {"a", "a", enc.Number(2)}, {"", "", enc.Nil{}}})
+		checkLeft(t, `{}`, enc.Pairs{})
+		checkLeft(t, `{"b":1,"a":2,"":null}`, enc.Pairs{{"b", "b", enc.Integer(1)}, {"a", "a", enc.Integer(2)}, {"", "", enc.Nil{}}})
 	})
 
 	t.Run("lists", func(t *testing.T) {
-		check(`[]`, enc.List{})
-		check(`[null]`, enc.List{enc.Nil{}})
-		check(`[1,"two",false]`, enc.List{enc.Number(1), enc.String("two"), enc.Bool(false)})
+		check(t, `[]`, enc.List{})
+		check(t, `[null]`, enc.List{enc.Nil{}})
+		check(t, `[1,"two",false]`, enc.List{enc.Integer(1), enc.String("two"), enc.Bool(false)})
 	})
 
 	t.Run("deep", func(t *testing.T) {
-		check(`[{}]`, enc.List{enc.Map{}})
-		check(`[[],null]`, enc.List{enc.List{}, enc.Nil{}})
-		check(`{"l":[]}`, enc.Map{"l": enc.List{}})
+		check(t, `[{}]`, enc.List{enc.Map{}})
+		check(t, `[[],null]`, enc.List{enc.List{}, enc.Nil{}})
+		check(t, `{"l":[]}`, enc.Map{"l": enc.List{}})
 	})
 }
 

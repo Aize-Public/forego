@@ -15,7 +15,8 @@ var _ Node = List{}
 func (this List) native() any {
 	out := []any{}
 	for _, n := range this {
-		out = append(out, n.native())
+		x := n.native()
+		out = append(out, x)
 	}
 	return out
 }
@@ -39,7 +40,8 @@ func (this List) String() string {
 func (this List) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) error {
 	switch into.Kind() {
 	case reflect.Interface:
-		into.Set(reflect.ValueOf(this.native()))
+		x := this.native()
+		into.Set(reflect.ValueOf(x))
 		return nil
 
 	case reflect.Slice:
