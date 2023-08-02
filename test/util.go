@@ -21,6 +21,10 @@ func jsonish(v any) string {
 		if json.Valid(v) {
 			return string(v)
 		}
+	case string:
+		if json.Valid([]byte(v)) {
+			return v
+		}
 	}
 	j, err := json.Marshal(v)
 	if err != nil {
