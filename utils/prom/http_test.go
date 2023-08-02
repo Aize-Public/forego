@@ -9,15 +9,14 @@ import (
 
 	"github.com/Aize-Public/forego/ctx"
 	"github.com/Aize-Public/forego/ctx/log"
-	"github.com/Aize-Public/forego/metrics/prom"
 	"github.com/Aize-Public/forego/test"
+	"github.com/Aize-Public/forego/utils/prom"
 )
 
 func TestHttp(t *testing.T) {
 	c := test.Context(t)
 
 	m := prom.Histogram{
-		Name:   "foo_bar",
 		Desc:   "Foo Bar example",
 		Labels: []string{"op", "loc"},
 		Buckets: []float64{
@@ -29,7 +28,7 @@ func TestHttp(t *testing.T) {
 	}
 	m.Observe(0.123, "foo", "bar")
 	buf := &bytes.Buffer{}
-	m.Print(buf)
+	m.Print("foo_bar", buf)
 
 	test.NoError(t, validHttpReponse(c, buf))
 }

@@ -8,14 +8,16 @@ import (
 )
 
 type Histogram struct {
-	Name    string
+	//Name    string
 	Desc    string
 	Buckets []float64
 	Labels  []string
-	val     sync.Map[string, *histogram]
+	val     sync.Map[string, *histogramTS]
 }
 
-type histogram struct {
+var DefaultBuckets = []float64{.001, .0025, .005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10, 30, 60, 60 * 5, 60 * 30} // 1ms .. 30m
+
+type histogramTS struct {
 	m       sync.Mutex
 	buckets []int
 	sum     float64
@@ -23,10 +25,11 @@ type histogram struct {
 }
 
 func (this *Histogram) Observe(val float64, labels ...string) {
-	this.val.GetOrStore(stringify(this.Labels, labels), &histogram{}).observe(this.Buckets, val)
+	this.val.GetOrStore(stringify(this.Labels, labels), &histogramTS{}).
+		observe(this.Buckets, val)
 }
 
-func (this *histogram) observe(le []float64, val float64) {
+func (this *histogramTS) observe(le []float64, val float64) {
 	//defer log.Printf("(%p).Observe(%v)", this, val)
 	this.m.Lock()
 	defer this.m.Unlock()
@@ -44,25 +47,25 @@ func (this *histogram) observe(le []float64, val float64) {
 	}
 }
 
-func (this *Histogram) Print(w io.Writer) (err error) {
+func (this *Histogram) Print(name string, w io.Writer) (err error) {
 	first := true
-	return this.val.Range(func(l string, v *histogram) error {
+	return this.val.Range(func(l string, v *histogramTS) error {
 		if first {
 			first = false
-			_, err := fmt.Fprintf(w, "# HELP %s %s\n", this.Name, this.Desc)
+			_, err := fmt.Fprintf(w, "# HELP %s %s\n", name, this.Desc)
 			if err != nil {
 				return err
 			}
-			_, err = fmt.Fprintf(w, "# TYPE %s histogram\n", this.Name)
+			_, err = fmt.Fprintf(w, "# TYPE %s histogram\n", name)
 			if err != nil {
 				return err
 			}
 		}
-		return v.print(w, this.Buckets, this.Name, l)
+		return v.print(w, this.Buckets, name, l)
 	})
 }
 
-func (this *histogram) print(w io.Writer, le []float64, name, labels string) (err error) {
+func (this *histogramTS) print(w io.Writer, le []float64, name, labels string) (err error) {
 	this.m.Lock()
 	defer this.m.Unlock()
 	if labels == "" {

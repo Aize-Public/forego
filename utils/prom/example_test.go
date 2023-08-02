@@ -6,8 +6,7 @@ import (
 )
 
 func TestBasic(t *testing.T) {
-	m := Register(&Histogram{
-		Name:   "foo_bar",
+	m := Register("foo_bar", &Histogram{
 		Desc:   "Foo Bar example",
 		Labels: []string{"op", "loc"},
 		Buckets: []float64{
@@ -27,7 +26,6 @@ func TestBasic(t *testing.T) {
 
 func BenchmarkHistogram(b *testing.B) {
 	m := &Histogram{
-		Name:   "foo_bar",
 		Desc:   "Foo Bar example",
 		Labels: []string{"op", "loc"},
 		Buckets: []float64{

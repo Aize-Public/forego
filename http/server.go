@@ -37,7 +37,11 @@ func NewServer(c ctx.C) *Server {
 		mux: http.NewServeMux(),
 		OnResponse: func(r Stat) {
 			log.Infof(c, "%s %d in %v", r.Path, r.Code, r.Elapsed)
-			// TODO metrics
+			metric{
+				Method: r.Method,
+				Code:   r.Code,
+				Path:   r.Path,
+			}.observe(r.Elapsed)
 		},
 	}
 	this.h = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

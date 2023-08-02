@@ -7,22 +7,21 @@ import (
 )
 
 type Custom struct {
-	Name string
 	Desc string
 	Type string                // summary
 	Func func() map[string]any // key is the full metric name (including _suffix and {labels})
 }
 
-func (this *Custom) Print(w io.Writer) error {
+func (this *Custom) Print(name string, w io.Writer) error {
 	m := this.Func()
 	if len(m) == 0 {
 		return nil
 	}
-	_, err := fmt.Fprintf(w, "# HELP %s %s\n", this.Name, this.Desc)
+	_, err := fmt.Fprintf(w, "# HELP %s %s\n", name, this.Desc)
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprintf(w, "# TYPE %s %s\n", this.Name, this.Type)
+	_, err = fmt.Fprintf(w, "# TYPE %s %s\n", name, this.Type)
 	if err != nil {
 		return err
 	}

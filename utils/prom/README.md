@@ -1,10 +1,6 @@
 # `prom` -- Prometheus lightweight replacement
 
-Work In Progress
-
-Replaces the bloated and partially unsafe `github.com/prometheus/client_golang` with a lighter version, with less quirks
-
-example subject to change, check test files for up-to-date examples
+Replaces `github.com/prometheus/client_golang` with a lighter version, no collector and simpler code
 
 ```go
 var foobar = prom.Register(&prom.Histogram{

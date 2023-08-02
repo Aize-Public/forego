@@ -4,13 +4,12 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/Aize-Public/forego/metrics/prom"
 	"github.com/Aize-Public/forego/test"
+	"github.com/Aize-Public/forego/utils/prom"
 )
 
 func TestGauge(t *testing.T) {
-	m := prom.Gauge[float64]{
-		Name:   t.Name(),
+	m := prom.Gauge{
 		Labels: []string{"path", "op"},
 	}
 	m.SetFunc(func() float64 {
@@ -25,9 +24,29 @@ func TestGauge(t *testing.T) {
 	m.SetFunc(nil, "/foo", "write")
 
 	w := &bytes.Buffer{}
-	m.Print(w)
+	m.Print(t.Name(), w)
 	t.Logf("full: \n%s", w.String())
 	test.Contains(t, w.String(), "/foo")
 	test.NotContains(t, w.String(), "write")
 	test.Contains(t, w.String(), "0.3")
+}
+
+func TestGaugeCounter(t *testing.T) {
+	m := prom.Gauge{
+		Labels: []string{"path", "op"},
+	}
+	c1 := m.Counter("/foo", "one")
+	c1.Inc(42)
+	{
+		w := &bytes.Buffer{}
+		m.Print(t.Name(), w)
+		test.Contains(t, w.String(), "one")
+		test.Contains(t, w.String(), "42")
+	}
+	c1.Dec(17)
+	{
+		w := &bytes.Buffer{}
+		m.Print(t.Name(), w)
+		test.Contains(t, w.String(), "25")
+	}
 }

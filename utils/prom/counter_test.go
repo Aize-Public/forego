@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/Aize-Public/forego/metrics/prom"
 	"github.com/Aize-Public/forego/test"
+	"github.com/Aize-Public/forego/utils/prom"
 )
 
 func TestCounter(t *testing.T) {

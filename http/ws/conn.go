@@ -143,11 +143,15 @@ func (this *Conn[State]) onData(c ctx.C, n enc.Node) error {
 		Conn:    this,
 		Channel: f.Channel,
 	}
+	t0 := time.Now()
 	err = obj.Do(c, r)
+	dt := time.Since(t0)
 	if err != nil {
+		Metrics.Request.Observe(dt.Seconds(), f.Path, "err")
 		_ = r.Error(c, err)
 		return nil
 	}
+	Metrics.Request.Observe(dt.Seconds(), f.Path, "ok")
 	res := api.JSON{}
 	err = s.Server().Send(c, obj, &res)
 	if err != nil {

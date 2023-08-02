@@ -2,6 +2,7 @@ package ws
 
 import (
 	gohttp "net/http"
+	"time"
 
 	"github.com/Aize-Public/forego/api"
 	"github.com/Aize-Public/forego/ctx"
@@ -53,7 +54,12 @@ func New[State any](c ctx.C, objs ...Op[State]) (*Handler[State], error) {
 		Handler: websocket.Handler(func(conn *websocket.Conn) {
 			c := conn.Request().Context()
 			ws := this.connect(c, &impl{conn: conn})
+			t0 := time.Now()
+			defer Metrics.Gauge.Counter(conn.Request().URL.Path).Inc(1).Dec(1)
 			defer ws.Close(c, "exit")
+			defer func() {
+				Metrics.Life.Observe(time.Since(t0).Seconds(), conn.Request().URL.Path)
+			}()
 			ws.loop(c)
 		}),
 	}
