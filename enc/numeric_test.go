@@ -12,7 +12,7 @@ func TestNumeric(t *testing.T) {
 	i := int64(1000000234567890123) // big enough to be rounded as float64
 	t.Logf("i64: %d", i)
 	j := enc.MustMarshalJSON(c, i)
-	test.Contains(t, string(j), `90123`)
+	test.EqualsStr(t, string(j), `1000000234567890123`)
 	test.NoError(t, enc.UnmarshalJSON(c, j, &i))
 	test.EqualsGo(t, 1000000234567890123, i)
 	var a any

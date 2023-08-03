@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/Aize-Public/forego/ctx"
-	"github.com/Aize-Public/forego/ctx/log"
 )
 
 type Numeric interface {
@@ -76,7 +75,7 @@ func (this Num) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) erro
 }
 
 func unmarshalNumericInto(this numeric, c ctx.C, handler Handler, into reflect.Value) error {
-	log.Debugf(c, "OHA %#v => %#v", this, into)
+	//log.Debugf(c, "OHA %#v => %#v", this, into)
 	switch into.Kind() {
 	case reflect.Float64, reflect.Float32:
 		f, err := this.Float64()
