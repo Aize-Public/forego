@@ -19,4 +19,8 @@ func TestNumeric(t *testing.T) {
 	test.NoError(t, enc.UnmarshalJSON(c, j, &a))
 	_ = a.(float64)
 	t.Logf("a: %v", a)
+
+	test.IsType(t, enc.Integer(0), enc.Num(1))
+	test.IsType(t, enc.Float(0), enc.Num(1.1))
+	test.IsType(t, enc.Digits(""), enc.Num("1.1"))
 }
