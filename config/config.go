@@ -76,11 +76,11 @@ func unmarshalText(c ctx.C, dest reflect.Value, name string, val string) (err er
 		return v.UnmarshalText(c, val)
 	case encoding.TextUnmarshaler:
 		if val != "" {
-			return ctx.NewError(c, v.UnmarshalText([]byte(val)))
+			return ctx.WrapError(c, v.UnmarshalText([]byte(val)))
 		}
 	case json.Unmarshaler:
 		if val != "" {
-			return ctx.NewError(c, v.UnmarshalJSON([]byte(val)))
+			return ctx.WrapError(c, v.UnmarshalJSON([]byte(val)))
 		}
 	default:
 		//fmt.Printf("OHA %T\n", v)

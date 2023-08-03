@@ -20,7 +20,7 @@ func TestLogger(t *testing.T) {
 	test.Assert(t, len(logs) == 1)
 	test.ContainsJSON(t, logs[0], "num: 42")
 
-	var err = ctx.NewError(c, io.EOF)
+	var err = ctx.WrapError(c, io.EOF)
 	log.Debugf(c, "err: %v", err)
 	t.Logf("err: %+v", logs[1])
 }
