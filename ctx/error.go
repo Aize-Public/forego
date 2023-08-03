@@ -15,14 +15,6 @@ func NewErrorf(c C, f string, args ...any) error {
 	return maybeWrap(c, fmt.Errorf(f, args...))
 }
 
-// Obsolete: use WrapError
-func NewError(c C, err error) error {
-	if err == nil {
-		panic("NewError(nil) not allowed")
-	}
-	return maybeWrap(c, err)
-}
-
 // if the given error is nil, returns nil. Otherwise check if it already was wrapped into a ctx.Error and wrap it if not
 func WrapError(c C, err error) error {
 	if err == nil {

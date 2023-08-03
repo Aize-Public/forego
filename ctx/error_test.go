@@ -17,7 +17,7 @@ func TestError(t *testing.T) {
 	t.Logf("err: %T %v", err, err)
 	err = ctx.NewErrorf(c, "wrap: %w", err)
 	t.Logf("err: %T %v", err, err)
-	err = ctx.NewError(c, err)
+	err = ctx.WrapError(c, err)
 	t.Logf("err: %T %v", err, err)
 	err = fmt.Errorf("wrap more: %w", err)
 	t.Logf("err: %T %v", err, err)

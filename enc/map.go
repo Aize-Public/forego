@@ -109,7 +109,7 @@ func (this Map) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) erro
 				if !seen[k] {
 					err := handler.UnhandledFields(c, append(handler.path, k), v)
 					if err != nil {
-						return ctx.NewError(c, err)
+						return ctx.WrapError(c, err)
 					}
 				}
 			}
