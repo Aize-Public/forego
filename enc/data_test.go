@@ -68,7 +68,6 @@ func testDataHelper[T any](c ctx.C, t *testing.T, in T) (jsonOut, encOut T, json
 }
 
 func TestAdvancedData(t *testing.T) {
-	t.SkipNow()
 	c := test.Context(t)
 
 	// Predefine some variables
