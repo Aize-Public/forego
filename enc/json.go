@@ -1,6 +1,7 @@
 package enc
 
 import (
+	"bytes"
 	"encoding/json"
 
 	"github.com/Aize-Public/forego/ctx"
@@ -70,7 +71,9 @@ func mustJSON(in any) []byte {
 
 func (this JSON) Decode(c ctx.C, data []byte) (Node, error) {
 	var obj any
-	err := json.Unmarshal(data, &obj)
+	dec := json.NewDecoder(bytes.NewBuffer(data))
+	dec.UseNumber()
+	err := dec.Decode(&obj)
 	if err != nil {
 		return nil, ctx.NewErrorf(c, "%w", err)
 	}

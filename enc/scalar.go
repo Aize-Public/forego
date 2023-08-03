@@ -38,6 +38,7 @@ func (this String) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) e
 	return nil
 }
 
+/*
 // NOTE(oha) do we need to split into Integers and Floats?
 type Number float64
 
@@ -79,6 +80,7 @@ func (this Number) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) e
 	}
 	return nil
 }
+*/
 
 type Bool bool
 

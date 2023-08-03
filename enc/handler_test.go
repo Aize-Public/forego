@@ -32,11 +32,11 @@ func TestUnmarshal(t *testing.T) {
 			map[string]any{"yes": true},
 		)
 		check(
-			enc.List{enc.Number(3.14), enc.Nil{}},
+			enc.List{enc.Float(3.14), enc.Nil{}},
 			[]any{3.14, nil},
 		)
 		check(
-			enc.Number(3.14),
+			enc.Float(3.14),
 			3.14,
 		)
 		check(
@@ -62,7 +62,7 @@ func TestUnmarshal(t *testing.T) {
 			map[string]any{"yes": true},
 		)
 		check(
-			enc.Map{"list": enc.List{enc.Nil{}, enc.Number(3.14)}},
+			enc.Map{"list": enc.List{enc.Nil{}, enc.Float(3.14)}},
 			map[string]any{"list": []any{nil, 3.14}},
 		)
 		// TODO check for error if passing not a map
@@ -75,7 +75,7 @@ func TestUnmarshal(t *testing.T) {
 		var y struct {
 			X *X `json:"x"`
 		}
-		err := h.Unmarshal(c, enc.Map{"x": enc.Map{"i": enc.Number(314)}}, &y)
+		err := h.Unmarshal(c, enc.Map{"x": enc.Map{"i": enc.Integer(314)}}, &y)
 		test.NoError(t, err)
 		test.ContainsJSON(t, y, "314")
 
@@ -114,10 +114,10 @@ func TestMarshal(t *testing.T) {
 
 	test.EqualsJSON(t, enc.Pairs{ // NOTE(oha): since we conflate a struct, we preserve the order of the fields using enc.Pairs
 		{"S", "s", enc.String("foo")},
-		{"I", "i", enc.Number(42)},
+		{"I", "i", enc.Integer(42)},
 		{"V", "v", enc.List{
 			enc.Nil{},
-			enc.Number(2),
+			enc.Integer(2),
 			enc.Bool(true),
 		}},
 	}, n)
@@ -205,7 +205,7 @@ func TestListPtrStruct(t *testing.T) {
 
 func TestArray(t *testing.T) {
 	c := test.Context(t)
-	n := enc.Number(7)
+	n := enc.Integer(7)
 	var x [2]int
 	{
 		err := enc.Unmarshal(c, enc.List{n, n}, &x)

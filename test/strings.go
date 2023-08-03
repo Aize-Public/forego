@@ -16,6 +16,11 @@ func Contains(t *testing.T, str, pattern string) {
 	contains(str, pattern).true(t)
 }
 
+func ContainsGo(t *testing.T, obj any, pattern string) {
+	t.Helper()
+	contains(fmt.Sprintf("%#v", obj), pattern).true(t)
+}
+
 // check if the json of obj contains pattern
 func ContainsJSON(t *testing.T, obj any, pattern string) {
 	t.Helper()

@@ -1,6 +1,7 @@
 package enc
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -79,33 +80,37 @@ func fromNative(in any) Node {
 		return String(in)
 
 	case float64:
-		return Number(in)
+		return Float(in)
 	case float32:
-		return Number(in)
+		return Float(in)
 
 	case int:
-		return Number(in)
+		return Integer(in)
 	case int8:
-		return Number(in)
+		return Integer(in)
 	case int16:
-		return Number(in)
+		return Integer(in)
 	case int32:
-		return Number(in)
+		return Integer(in)
 	case int64:
-		return Number(in)
+		return Integer(in)
 	case uint:
-		return Number(in)
+		return Integer(in)
 	case uint8:
-		return Number(in)
+		return Integer(in)
 	case uint16:
-		return Number(in)
+		return Integer(in)
 	case uint32:
-		return Number(in)
+		return Integer(in)
 	case uint64:
-		return Number(in)
+		return Integer(in)
 
 	case bool:
 		return Bool(in)
+
+	case json.Number:
+		return Num(in)
+
 	default:
 		panic(fmt.Sprintf("unexpected native type %T: %+v", in, in))
 	}
