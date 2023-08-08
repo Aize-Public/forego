@@ -20,6 +20,7 @@ func (this String) GoString() string {
 	return fmt.Sprintf("enc.String{%q}", string(this))
 }
 
+// for compatibility, it returns a quoted string, if you need the string itself use a `string(this)` cast
 func (this String) String() string {
 	return fmt.Sprintf("%q", string(this))
 }
