@@ -25,7 +25,7 @@ func (this Map) native() any {
 
 func (this Map) MarshalJSON() ([]byte, error) {
 	if this == nil {
-		return []byte(`{}`), nil
+		return []byte(`{}`), nil // NOTE(oha) is this correct?
 	}
 	return json.Marshal(map[string]Node(this))
 }
