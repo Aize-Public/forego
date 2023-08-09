@@ -109,7 +109,7 @@ func fromNative(in any) Node {
 		return Bool(in)
 
 	case json.Number:
-		return Num(in)
+		return Digits(in)
 
 	default:
 		panic(fmt.Sprintf("unexpected native type %T: %+v", in, in))

@@ -246,7 +246,7 @@ func (this Handler) Marshal(c ctx.C, in any) (Node, error) {
 					m[fmt.Sprint(nk)] = n
 				case Float:
 					m[fmt.Sprint(nk)] = n
-				case Num:
+				case Digits:
 					m[fmt.Sprint(nk)] = n
 				default:
 					return nil, ctx.NewErrorf(c, "can't marshal %v as map key", kv.Type())
@@ -290,7 +290,7 @@ func (this Handler) Marshal(c ctx.C, in any) (Node, error) {
 			if !tag.OmitEmpty || fn != 0.0 {
 				out = append(out, Pair{tag.Name, tag.JSON, fn})
 			}
-		case Num:
+		case Digits:
 			if !tag.OmitEmpty || fn != "" {
 				out = append(out, Pair{tag.Name, tag.JSON, fn})
 			}

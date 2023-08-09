@@ -50,27 +50,27 @@ func (this Float) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) er
 	return unmarshalNumericInto(this, c, handler, into)
 }
 
-type Num string
+type Digits string
 
-var _ numeric = Num("0")
+var _ numeric = Digits("0")
 
-func (this Num) Int64() (int64, error) {
+func (this Digits) Int64() (int64, error) {
 	i, err := strconv.ParseInt(string(this), 10, 64)
 	return i, err
 }
-func (this Num) Float64() (float64, error) { return strconv.ParseFloat(string(this), 64) }
-func (this Num) String() string            { return string(this) }
-func (this Num) GoString() string          { return fmt.Sprintf("enc.Num{%q}", string(this)) }
+func (this Digits) Float64() (float64, error) { return strconv.ParseFloat(string(this), 64) }
+func (this Digits) String() string            { return string(this) }
+func (this Digits) GoString() string          { return fmt.Sprintf("enc.Num{%q}", string(this)) }
 
-func (this Num) native() any {
+func (this Digits) native() any {
 	f, err := this.Float64() // builtin json convert to float64 when unmarshalling into any, we should do the same
 	if err == nil {
 		return f
 	}
 	return this.String()
 }
-func (this Num) MarshalJSON() ([]byte, error) { return []byte(this), nil }
-func (this Num) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) error {
+func (this Digits) MarshalJSON() ([]byte, error) { return []byte(this), nil }
+func (this Digits) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) error {
 	return unmarshalNumericInto(this, c, handler, into)
 }
 
