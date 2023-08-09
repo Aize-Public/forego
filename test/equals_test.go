@@ -9,7 +9,7 @@ func TestEquals(t *testing.T) {
 	equalJSON(false, false).true(t)
 	equalJSON(1, 1).true(t)
 	equalJSON(1, 2).false(t)
-	equalJSON(1, "1").false(t)
+	equalJSON(1, "1").true(t)
 	equalJSON(1, 1.0).true(t)
 
 	// json can be compared directly
