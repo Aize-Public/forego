@@ -70,6 +70,9 @@ func mustJSON(in any) []byte {
 }
 
 func (this JSON) Decode(c ctx.C, data []byte) (Node, error) {
+	if len(data) == 0 {
+		return nil, nil // NOTE(oha): we don't want to give error for empty or nil data
+	}
 	var obj any
 	dec := json.NewDecoder(bytes.NewBuffer(data))
 	dec.UseNumber()
