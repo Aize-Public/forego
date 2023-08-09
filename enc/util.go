@@ -4,7 +4,31 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+
+	"github.com/Aize-Public/forego/ctx"
 )
+
+func MustMap(n Node) Map {
+	switch n := n.(type) {
+	case Map:
+		return n
+	case Pairs:
+		return n.AsMap()
+	default:
+		panic(fmt.Sprintf("not a map: %T", n))
+	}
+}
+
+func AsMap(c ctx.C, n Node) (Map, error) {
+	switch n := n.(type) {
+	case Map:
+		return n, nil
+	case Pairs:
+		return n.AsMap(), nil
+	default:
+		return nil, ctx.NewErrorf(c, "not a map: %T", n)
+	}
+}
 
 type Tag struct {
 	Name      string

@@ -15,6 +15,14 @@ type Pairs []Pair
 
 var _ Node = Pairs{}
 
+func (this Pairs) AsMap() Map {
+	out := Map{}
+	for _, p := range this {
+		out[p.JSON] = p.Value
+	}
+	return out
+}
+
 func (this Pairs) native() any {
 	out := map[string]any{}
 	for _, p := range this {
@@ -76,7 +84,7 @@ func (this Pairs) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) er
 
 type Pair struct {
 	Name string
-	JSON string
+	JSON string // FIXME(oha): we can't really support Name and JSON, we must collapse to name and have all the tags agree
 
 	Value Node
 }
