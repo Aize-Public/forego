@@ -64,7 +64,7 @@ func (this Pairs) MarshalJSON() ([]byte, error) {
 
 func (this Pairs) Find(name string) Node {
 	for _, p := range this {
-		if p.Name == name {
+		if p.JSON == name {
 			return p.Value
 		}
 	}
