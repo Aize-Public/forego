@@ -3,9 +3,9 @@ package storage
 import "github.com/Aize-Public/forego/enc"
 
 type Filter struct {
-	Field string
+	Field string // the field we are checking
 	Cmp   Cmp
-	Val   enc.Node
+	Val   enc.Node // the literal we are testing against
 }
 
 type Cmp string
