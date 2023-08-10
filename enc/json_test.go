@@ -1,6 +1,7 @@
 package enc_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -9,6 +10,24 @@ import (
 	"github.com/Aize-Public/forego/enc"
 	"github.com/Aize-Public/forego/test"
 )
+
+// Empty json.RawMessage should cause error in encoding/json, but not in enc.
+func TestEmptyRawMessage(t *testing.T) {
+	c := test.Context(t)
+	empty := json.RawMessage{}
+
+	_, err := json.Marshal(empty)
+	test.Error(t, err)
+
+	node, err := enc.Marshal(c, empty)
+	test.NoError(t, err)
+	b := enc.JSON{}.Encode(c, node)
+	test.EqualsStr(t, "null", string(b)) // it started out as nothing (invalid json), but enc converts it to "null"
+
+	err = enc.UnmarshalJSON(c, b, &empty)
+	test.NoError(t, err)
+	test.EqualsGo(t, json.RawMessage("null"), empty)
+}
 
 func TestStruct(t *testing.T) {
 	c := test.Context(t)
