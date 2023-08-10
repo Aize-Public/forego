@@ -161,6 +161,7 @@ func (this *Server) HandleRequest(pattern string, f func(c ctx.C, in []byte, r *
 		if err != nil {
 			log.Warnf(c, "http: %v", err)
 			code := ErrorCode(err, 500)
+			w.WriteHeader(code)
 			if code < 500 {
 				j, _ := json.Marshal(map[string]any{
 					"error":    err.Error(),
@@ -174,7 +175,6 @@ func (this *Server) HandleRequest(pattern string, f func(c ctx.C, in []byte, r *
 				})
 				_, _ = w.Write(j)
 			}
-			w.WriteHeader(code)
 			return
 		}
 
