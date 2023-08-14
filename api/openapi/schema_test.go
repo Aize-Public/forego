@@ -16,6 +16,7 @@ type Obj struct {
 type Record struct {
 	Score float64 `json:"score"`
 	Label string  `json:"label"`
+	Blob  any     `json:"blob"`
 }
 
 func TestSchema(t *testing.T) {
@@ -49,4 +50,7 @@ func TestSchema(t *testing.T) {
 	test.EqualsGo(t, "float64", recordSchema.Properties["score"].Format)
 	test.NotNil(t, recordSchema.Properties["label"])
 	test.EqualsGo(t, "string", recordSchema.Properties["label"].Type)
+	test.NotNil(t, recordSchema.Properties["blob"])
+	test.EqualsGo(t, "object", recordSchema.Properties["blob"].Type)
+	test.EqualsGo(t, "interface {}", recordSchema.Properties["blob"].Format)
 }
