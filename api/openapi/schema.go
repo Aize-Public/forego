@@ -136,6 +136,12 @@ func (this *Service) schemaFromType(c ctx.C, t reflect.Type) (s *Schema, err err
 			AdditionalProps: elemSchema,
 		}, err
 
+	case reflect.Interface:
+		return &Schema{
+			Type:   "object",
+			Format: t.String(),
+		}, nil
+
 	case reflect.Struct:
 		// Create reference
 		structKey := tt.PkgPath() + "/" + tt.Name()
