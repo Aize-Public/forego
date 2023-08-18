@@ -57,4 +57,13 @@ func TestKeyvalue(t *testing.T) {
 		test.NoError(t, err)
 		test.EqualsJSON(t, `[2]`, vals)
 	}
+	{
+		err := kv.Upsert(c, "three", enc.Map{"num": enc.Integer(3)})
+		test.NoError(t, err)
+		err = kv.Delete(c, "three")
+		test.NoError(t, err)
+		val, err := kv.Get(c, "three")
+		test.NoError(t, err)
+		test.Nil(t, val)
+	}
 }
