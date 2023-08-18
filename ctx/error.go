@@ -47,6 +47,9 @@ func maybeWrap(c C, err error) error {
 	if errors.Is(err, Error{}) {
 		return err // already wrapped
 	}
+	if errors.Is(err, &Error{}) {
+		return err // already wrapped
+	}
 	return Error{
 		error: err,
 		Stack: stack(2, 100),
