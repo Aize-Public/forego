@@ -12,6 +12,7 @@ import (
 type KeyValue interface {
 	Get(c ctx.C, key string) (enc.Map, error)
 	Upsert(c ctx.C, key string, val enc.Map) error
+	Delete(c ctx.C, key string) error
 	Range(c ctx.C, f func(c ctx.C, key string, val enc.Map) error, filters ...Filter) error
 }
 
@@ -39,6 +40,13 @@ func (this *memKeyValue) Upsert(c ctx.C, key string, val enc.Map) error {
 	this.m.Lock()
 	defer this.m.Unlock()
 	this.data[key] = val
+	return nil
+}
+
+func (this *memKeyValue) Delete(c ctx.C, key string) error {
+	this.m.Lock()
+	defer this.m.Unlock()
+	delete(this.data, key)
 	return nil
 }
 
