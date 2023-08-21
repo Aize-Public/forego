@@ -88,7 +88,7 @@ func (this *memKeyValue) Range(c ctx.C, f func(c ctx.C, key string, val enc.Map)
 func check(c ctx.C, val enc.Map, filters ...Filter) (bool, error) {
 	for _, f := range filters {
 		ok, err := f.Check(c, val)
-		if err != nil || ok == false {
+		if err != nil || !ok {
 			return ok, err
 		}
 	}

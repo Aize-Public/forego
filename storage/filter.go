@@ -12,9 +12,9 @@ type Cmp string
 
 const (
 	Equal     Cmp = "EQ"
-	NotEqual      = "NEQ"
-	Greater       = "G"
-	Lesser        = "L"
-	GreaterEq     = "GEQ"
-	LesserEq      = "LEQ"
+	NotEqual  Cmp = "NEQ"
+	Greater   Cmp = "G"
+	Lesser    Cmp = "L"
+	GreaterEq Cmp = "GEQ"
+	LesserEq  Cmp = "LEQ"
 )
