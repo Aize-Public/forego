@@ -3,6 +3,7 @@ package prom
 import (
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/Aize-Public/forego/sync"
 )
@@ -22,6 +23,11 @@ type histogramTS struct {
 	buckets []int
 	sum     float64
 	count   int
+}
+
+func (this *Histogram) ObserveSince(start time.Time, labels ...string) {
+	this.val.GetOrStore(stringify(this.Labels, labels), &histogramTS{}).
+		observe(this.Buckets, time.Since(start).Seconds())
 }
 
 func (this *Histogram) Observe(val float64, labels ...string) {
