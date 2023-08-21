@@ -14,6 +14,13 @@ type Doable interface {
 	Do(ctx.C) error
 }
 
+func (s *Server) MustRegisterAPI(c ctx.C, obj Doable) {
+	err := s.RegisterAPI(c, obj)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func (s *Server) RegisterAPI(c ctx.C, obj Doable) error {
 	handler, err := api.NewServer(c, obj)
 	if err != nil {

@@ -9,6 +9,22 @@ import (
 	"github.com/google/uuid"
 )
 
+// create a ws client given the send function, only internal
+func newClient[State any](c ctx.C, send func(ctx.C, enc.Node) error) *Client[State] {
+	this := &Client[State]{
+		handlers: map[string]func(ctx.C, Frame) error{},
+		send:     send,
+		fallback: func(c ctx.C, f enc.Node) error {
+			return ctx.NewErrorf(c, "unexpected: %v", f)
+		},
+	}
+	return this
+}
+
+func (this *Client[State]) SetFallback(c ctx.C, f func(ctx.C, enc.Node) error) {
+	this.fallback = f
+}
+
 type Client[State any] struct {
 	// generic function for sending data to the server
 	send func(ctx.C, enc.Node) error
@@ -24,18 +40,9 @@ type Client[State any] struct {
 	fallback func(ctx.C, enc.Node) error
 }
 
-// create a client for this websocket, you must provide a way to send data to the server, and the fallback for any messages which
-// are not a reply to our requests
-func (h Handler[State]) NewClient(c ctx.C, send func(ctx.C, enc.Node) error, fallback func(ctx.C, enc.Node) error) *Client[State] {
-	this := &Client[State]{
-		send:     send,
-		apiType:  map[reflect.Type]api.Client[Op[State]]{},
-		apiPath:  map[string]api.Client[Op[State]]{},
-		handlers: map[string]func(ctx.C, Frame) error{},
-		fallback: func(c ctx.C, n enc.Node) error {
-			return ctx.NewErrorf(c, "unexpected %+v", n)
-		},
-	}
+func (this *Client[State]) Register(c ctx.C, h *Handler[State]) {
+	this.apiType = map[reflect.Type]api.Client[Op[State]]{}
+	this.apiPath = map[string]api.Client[Op[State]]{}
 	for _, h := range h.resolver {
 		hc := h.Client()
 		this.apiType[h.Type()] = hc
@@ -43,7 +50,6 @@ func (h Handler[State]) NewClient(c ctx.C, send func(ctx.C, enc.Node) error, fal
 			this.apiPath[path] = hc
 		}
 	}
-	return this
 }
 
 func (this *Client[State]) onRecv(c ctx.C, n enc.Node) error {

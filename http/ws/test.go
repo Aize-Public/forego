@@ -17,14 +17,15 @@ func (this *Handler[State]) TestClient(c ctx.C) *TestClient[State] {
 		cli2ser: make(chan enc.Node),
 		ser2cli: make(chan enc.Node, 100),
 	}
-	cli.Client = this.NewClient(c, func(c ctx.C, n enc.Node) error {
+	cli.Client = newClient[State](c, func(c ctx.C, n enc.Node) error {
 		select {
 		case cli.cli2ser <- n:
 			return nil
 		case <-c.Done():
 			return ctx.Cause(c)
 		}
-	}, func(c ctx.C, n enc.Node) error {
+	})
+	cli.SetFallback(c, func(c ctx.C, n enc.Node) error {
 		select {
 		case cli.ser2cli <- n:
 			return nil
@@ -32,6 +33,8 @@ func (this *Handler[State]) TestClient(c ctx.C) *TestClient[State] {
 			return ctx.Cause(c)
 		}
 	})
+	cli.Client.Register(c, this)
+
 	cli.Conn = this.connect(c, cli)
 	go func() {
 		// run the main loop in a separate go routine
