@@ -159,19 +159,20 @@ func (this *Server) HandleRequest(pattern string, f func(c ctx.C, in []byte, r *
 			return f(c, in, r)
 		}()
 		if err != nil {
+			tid := ctx.GetTracking(c)
 			log.Warnf(c, "http: %v", err)
 			code := ErrorCode(err, 500)
 			w.WriteHeader(code)
 			if code < 500 {
 				j, _ := json.Marshal(map[string]any{
 					"error":    err.Error(),
-					"tracking": nil, // TODO
+					"tracking": tid,
 				})
 				_, _ = w.Write(j)
 			} else {
 				j, _ := json.Marshal(map[string]any{
 					// NO CLIENT REPORTING FOR INTERNAL ERRORS (due to security reason, we don't want to leak information about internals)
-					"tracking": nil, // TODO
+					"tracking": tid,
 				})
 				_, _ = w.Write(j)
 			}
