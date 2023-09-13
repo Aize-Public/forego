@@ -5,7 +5,6 @@ import (
 	"reflect"
 
 	"github.com/Aize-Public/forego/ctx"
-	"github.com/Aize-Public/forego/ctx/log"
 )
 
 type String string
