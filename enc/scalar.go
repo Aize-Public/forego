@@ -107,7 +107,7 @@ func (this Bool) String() string {
 }
 
 func (this Bool) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) error {
-	log.Debugf(c, "%v.unmarshalInto(%#v)", this, into)
+	//log.Debugf(c, "%v.unmarshalInto(%#v)", this, into)
 	switch into.Kind() {
 	case reflect.Bool:
 		into.SetBool(bool(this))
