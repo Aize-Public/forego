@@ -78,7 +78,7 @@ func (this JSON) Decode(c ctx.C, data []byte) (Node, error) {
 	dec.UseNumber()
 	err := dec.Decode(&obj)
 	if err != nil {
-		return nil, ctx.NewErrorf(c, "%w", err)
+		return nil, ctx.NewErrorf(ctx.WithTag(c, "data", string(data)), "%w", err)
 	}
 	return fromNative(obj), nil
 }

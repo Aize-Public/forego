@@ -190,3 +190,17 @@ func TestRawNode(t *testing.T) {
 		t.Logf("OK!")
 	})
 }
+
+func TestNoData(t *testing.T) {
+	c := test.Context(t)
+	{
+		n, err := enc.JSON{}.Decode(c, nil)
+		test.NoError(t, err)
+		test.Nil(t, n)
+	}
+	{
+		n, err := enc.JSON{}.Decode(c, []byte{})
+		test.NoError(t, err)
+		test.Nil(t, n)
+	}
+}
