@@ -47,6 +47,7 @@ func (this Client) Post(c ctx.C, url string, body []byte) ([]byte, error) {
 	if err != nil {
 		return nil, ctx.NewErrorf(c, "can't create request: %w", err)
 	}
+	req.Header.Set(`Content-Type`, `application/json`)
 	res, err := this.Do(req)
 	if err != nil {
 		return nil, err
