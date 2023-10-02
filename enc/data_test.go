@@ -11,7 +11,7 @@ import (
 )
 
 // Make sure the types are marshaled and unmarshaled ok like encoding/json
-func TestData(t *testing.T) {
+func TestBasicData(t *testing.T) {
 	c := test.Context(t)
 
 	testData(c, t, (any)(nil))
@@ -37,6 +37,9 @@ func TestData(t *testing.T) {
 	testData(c, t, []any{})
 	testData(c, t, []any{nil})
 	testData(c, t, []any{map[string]any{"nil": nil}})
+
+	testData(c, t, time.Second)
+	testData(c, t, enc.Duration(time.Second))
 }
 
 func testData[T any](c ctx.C, t *testing.T, in T) {
