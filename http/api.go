@@ -47,14 +47,16 @@ func (s *Server) RegisterAPI(c ctx.C, obj Doable) error {
 		if err != nil {
 			return nil, err
 		}
-		log.Debugf(c, "API %#v", obj)
+		//log.Debugf(c, "API %+v", obj)
 
 		res := &api.JSON{}
 		err = handler.Send(c, obj, res)
 		if err != nil {
 			return nil, err
 		}
-		return enc.JSON{}.Encode(c, res.Data), nil
+		out := enc.JSON{}.Encode(c, res.Data)
+		log.Debugf(c, "API response %s", out)
+		return out, nil
 	}
 
 	urls := handler.URLs()
