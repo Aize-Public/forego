@@ -91,9 +91,9 @@ func (this Server) Listen(c ctx.C, addr string) (net.Addr, error) {
 		ConnState: func(conn net.Conn, state http.ConnState) {
 			// TODO(oha): do we need to setup a limiter? if so, this is to know when any hijacker kicks in
 		},
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 5 * time.Second,
-		Handler:      this.h,
+		ReadTimeout: 30 * time.Second,
+		//WriteTimeout: 30 * time.Second, // better let the implementation decide
+		Handler: this.h,
 	}
 	if addr == "" {
 		addr = ":http"
