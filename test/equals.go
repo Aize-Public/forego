@@ -7,6 +7,14 @@ import (
 	"github.com/Aize-Public/forego/utils/ast"
 )
 
+func EqualsType(t *testing.T, expect, got any) {
+	t.Helper()
+	equal(
+		fmt.Sprintf("%T", expect),
+		fmt.Sprintf("%T", got),
+	).prefix("%s == %s", Quote(ast.Assignment(0, 1)), Quote(ast.Assignment(0, 2))).true(t)
+}
+
 func EqualsStr(t *testing.T, expect, got string) {
 	t.Helper()
 	equal(expect, got).prefix("%s == %s", Quote(ast.Assignment(0, 1)), Quote(ast.Assignment(0, 2))).true(t)
