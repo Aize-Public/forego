@@ -9,7 +9,7 @@ import (
 	"github.com/Aize-Public/forego/utils/ast"
 )
 
-func testCall(c ctx.C, b any) (*ast.Call, error) {
+func testCall(c ctx.C, b any) (*ast.Call, string, error) {
 	return ast.Caller(0)
 }
 
@@ -20,7 +20,7 @@ func testAssign(c ctx.C, b any) string {
 func TestArg(t *testing.T) {
 	c := ctx.TODO()
 	i := 2
-	call, err := testCall(c, i == 4/i)
+	call, _, err := testCall(c, i == 4/i)
 	test.EqualsJSON(t, nil, err)
 	test.EqualsJSON(t, "c", call.Args[0].Src)
 	test.EqualsJSON(t, "i == 4/i", call.Args[1].Src)

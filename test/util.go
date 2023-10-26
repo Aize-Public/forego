@@ -39,7 +39,7 @@ type res struct {
 }
 
 func (res res) argument(above, argNum int) res {
-	call, _ := ast.Caller(above + 1)
+	call, _, _ := ast.Caller(above + 1)
 	res.msg = call.Args[argNum].Src + ": " + res.msg
 	return res
 }

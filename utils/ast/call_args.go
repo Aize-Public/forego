@@ -1,7 +1,6 @@
 package ast
 
 import (
-	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -38,26 +37,27 @@ func (a Arg) String() string {
 
 // Helper: returns the source code that assigned the first argument or the argument source code or some other messages
 func Assignment(above, arg int) string {
-	a, aerr := Caller(above + 1)
+	a, fl, aerr := Caller(above + 1)
 	if aerr != nil {
-		return fmt.Sprintf("<can't parse: %v>", aerr)
+		return fl
+		//return fmt.Sprintf("<can't parse: %v>", aerr)
 	} else {
 		return a.Args[arg].Short()
 	}
 }
 
 // expand the source code of the caller (use above==0 for the current function)
-func Caller(above int) (call *Call, err error) {
+func Caller(above int) (call *Call, fl string, err error) {
 	stack := util.Caller(above + 2) // caller of the caller
 	fname := util.Caller(above + 1).FuncName()
 	src, err := os.ReadFile(stack.AbsFile())
 	if err != nil {
-		return nil, ctx.NewErrorf(nil, "opening %q: %w", stack.AbsFile(), err)
+		return nil, stack.FileLine(), ctx.NewErrorf(nil, "opening %q: %w", stack.AbsFile(), err)
 	}
 	fset := token.NewFileSet() // positions are relative to fset
 	f, err := parser.ParseFile(fset, stack.AbsFile(), src, 0)
 	if err != nil {
-		return nil, ctx.NewErrorf(nil, "parsing %q: %w", stack.AbsFile(), err)
+		return nil, stack.FileLine(), ctx.NewErrorf(nil, "parsing %q: %w", stack.AbsFile(), err)
 	}
 
 	ast.Walk(visitor{
@@ -71,9 +71,9 @@ func Caller(above int) (call *Call, err error) {
 	}, f)
 
 	if call == nil {
-		return nil, ctx.NewErrorf(nil, "can't find function %q in %s:%d", fname, stack.File, stack.Line)
+		return nil, stack.FileLine(), ctx.NewErrorf(nil, "can't find function %q in %s:%d", fname, stack.File, stack.Line)
 	}
-	return call, nil
+	return call, stack.FileLine(), nil
 }
 
 type visitor struct {
