@@ -7,6 +7,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
+	"github.com/Aize-Public/forego/enc"
 	"github.com/Aize-Public/forego/utils/ast"
 )
 
@@ -26,7 +27,8 @@ func jsonish(v any) string {
 			return v
 		}
 	}
-	j, err := json.Marshal(v)
+	//j, err := json.Marshal(v)
+	j, err := enc.MarshalJSON(nil, v)
 	if err != nil {
 		return err.Error()
 	}
