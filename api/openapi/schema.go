@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/Aize-Public/forego/ctx"
 	"github.com/Aize-Public/forego/ctx/log"
 )
 
 type Schema struct {
-	Type            string             `json:"type,omitempty"`                 // object/string/integer
-	Format          string             `json:"format,omitempty"`               // int64
+	Type            string             `json:"type,omitempty"`
+	Format          string             `json:"format,omitempty"`
 	Required        []string           `json:"required,omitempty"`             // list of required fields names
 	Properties      map[string]*Schema `json:"properties,omitempty"`           // for structs
 	AdditionalProps *Schema            `json:"additionalProperties,omitempty"` // for maps
@@ -46,26 +47,35 @@ func (this *Service) schemaFromType(c ctx.C, t reflect.Type) (s *Schema, err err
 			s.Format = ""
 		}
 	}()
+
 	zero := reflect.New(t).Elem().Interface()
 	switch zero.(type) {
 	case json.RawMessage:
 		return &Schema{
-			Format: "arbitrary JSON",
+			Type:   "object",
+			Format: "",
 		}, nil
+
 	case []byte:
 		return &Schema{
-			Format: "bytes",
+			Type:   "string",
+			Format: "byte",
 		}, nil
-	}
 
-	switch zero.(type) {
+	case time.Time:
+		return &Schema{
+			Type:   "string",
+			Format: "date-time",
+		}, nil
+
 	case json.Marshaler:
 		// Handle corner case where a type can be struct, but marshalled to a primitive json type
 		// In openapi schema, we want to describe the marshalled json type
 		j, err := json.Marshal(zero)
 		if err == nil {
 			switch j[0] {
-			case '{', 'n', '[': // object like, we dig further
+			case '{', 'n', '[':
+				// object like, we dig further...
 			case '"':
 				return &Schema{
 					Type:   "string",
@@ -76,10 +86,10 @@ func (this *Service) schemaFromType(c ctx.C, t reflect.Type) (s *Schema, err err
 					Type:   "boolean",
 					Format: t.String(),
 				}, nil
-			case '.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				// it could be either integer or float here, but it's not possible to determine that in all cases
+			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.':
+				// It could be either integer or float here, but it's not possible to determine which
 				return &Schema{
-					Type:   "numeric",
+					Type:   "number",
 					Format: t.String(),
 				}, nil
 			default:
@@ -88,8 +98,8 @@ func (this *Service) schemaFromType(c ctx.C, t reflect.Type) (s *Schema, err err
 		}
 	}
 
-	tt := t // tt is the reference type, but t stays the same
-	for tt.Kind() == reflect.Pointer {
+	tt := t                            // tt is the reference type, but t stays the same
+	for tt.Kind() == reflect.Pointer { // if pointer, find its value type
 		tt = tt.Elem()
 	}
 
@@ -97,23 +107,20 @@ func (this *Service) schemaFromType(c ctx.C, t reflect.Type) (s *Schema, err err
 	case reflect.Bool:
 		return &Schema{
 			Type:   "boolean",
-			Format: t.String(),
+			Format: "",
 		}, nil
+
 	case reflect.Float32, reflect.Float64:
+		fallthrough
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		fallthrough
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		// Using "number" instead of "integer" for ints here as well, to be consistent
 		return &Schema{
-			Type:   "numeric",
+			Type:   "number",
 			Format: t.String(),
 		}, nil
-	case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64:
-		return &Schema{
-			Type:   "integer",
-			Format: t.String(),
-		}, nil
-	case reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return &Schema{
-			Type:   "integer",
-			Format: t.String(),
-		}, nil
+
 	case reflect.String:
 		return &Schema{
 			Type:   "string",
@@ -137,9 +144,14 @@ func (this *Service) schemaFromType(c ctx.C, t reflect.Type) (s *Schema, err err
 		}, err
 
 	case reflect.Interface:
+		format := ""
+		if t != reflect.TypeOf((*any)(nil)).Elem() {
+			// Just exposing the name of custom interfaces, but maybe we could do something better here
+			format = t.String()
+		}
 		return &Schema{
 			Type:   "object",
-			Format: t.String(),
+			Format: format,
 		}, nil
 
 	case reflect.Struct:
