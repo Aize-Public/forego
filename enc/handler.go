@@ -75,7 +75,7 @@ func (this Handler) unmarshal(c ctx.C, from Node, v reflect.Value) error {
 			this.Debugf(c, "is %T", into)
 		}
 		*into = JSON{}.Encode(c, from)
-		warnIneff(c, "Warn: inefficient json.RawMessage, use enc.Tree instead")
+		warnIneff(c, "Warn: inefficient json.RawMessage, use enc.Node instead")
 		return nil
 	case *time.Time:
 		var t time.Time
