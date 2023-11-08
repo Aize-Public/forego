@@ -24,14 +24,22 @@ func (this *Channel) Close(c ctx.C) error {
 
 func (this *Channel) onData(c ctx.C, f Frame) error {
 	h := this.byPath[f.Path]
-	if h != nil {
-		log.Debugf(c, "ch[%q].%q(%v)", f.Channel, f.Path, f.Data)
-		return h(C{
-			C:  c,
-			ch: this,
-		}, f.Data)
+	if h == nil {
+		return ctx.NewErrorf(c, "no %q for channel %q", f.Path, f.Channel)
 	}
-	return ctx.NewErrorf(c, "no %q for channel %q", f.Path, f.Channel)
+	log.Debugf(c, "ch[%q].%q(%v)", f.Channel, f.Path, f.Data)
+	err := h(C{
+		C:  c,
+		ch: this,
+	}, f.Data)
+	if err != nil {
+		this.Conn.Send(c, Frame{
+			Channel: this.ID,
+			Type:    "error",
+			Data:    enc.MustMarshal(c, err.Error()),
+		})
+	}
+	return nil
 }
 
 type Frame struct {
