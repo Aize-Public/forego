@@ -1,94 +1,66 @@
 package ws
 
 import (
-	gohttp "net/http"
-	"time"
+	"net/http"
 
-	"github.com/Aize-Public/forego/api"
 	"github.com/Aize-Public/forego/ctx"
+	"github.com/Aize-Public/forego/ctx/log"
+	"github.com/Aize-Public/forego/enc"
 	"github.com/Aize-Public/forego/shutdown"
-	"github.com/google/uuid"
+	"github.com/Aize-Public/forego/utils/sync"
 	"golang.org/x/net/websocket"
 )
 
-/*
-Handler is used to define a websocket.
-It tells on which path to mount it, what to do on connect and which object should be expected to be processed
-*/
-type Handler[State any] struct {
-	// optional callback fired on connection. No error can be returned, but you are free to close the connection if needed
-	OnConnect func(c ctx.C, conn *Conn[State])
-
-	// fired when a shutdown start, if empty it will send `"shutdown"` to the client
-	OnShutdown func(c ctx.C, conn *Conn[State])
-
-	// fire after close
-	OnExit func(c ctx.C, conn *Conn[State])
-
-	resolver map[string]api.Handler[Op[State]] // TODO(oha) change to something specific to websocket, e.g. that allows parallelism or other flows
-	impl     websocket.Server
+type Handler struct {
+	byPath sync.Map[string, func(ctx.C, *Conn, Frame) error]
 }
 
-var _ gohttp.Handler = (*Handler[any])(nil)
-
-// Build a new Websocket handler, which support the given operations.
-// Note: the given Op objects might not have an `api:"url"` field, in which case the Object name will be used
-func New[State any](c ctx.C, objs ...Op[State]) (*Handler[State], error) {
-	this := &Handler[State]{
-		OnShutdown: func(c ctx.C, conn *Conn[State]) {
-			_ = conn.Send(c, "shutdown")
-		},
-	}
-
-	this.resolver = map[string]api.Handler[Op[State]]{}
-	for _, obj := range objs {
-		s, err := api.NewHandler(c, obj)
-		if err != nil {
-			return nil, err
-		}
-		for _, p := range s.Paths() {
-			this.resolver[p] = s
-		}
-	}
-	this.impl = websocket.Server{
+// return a websocket.Server which can be used as an http.Handler
+func (this *Handler) Server() websocket.Server {
+	x := websocket.Server{
 		Handler: websocket.Handler(func(conn *websocket.Conn) {
 			c := conn.Request().Context()
-			ws := this.connect(c, &impl{conn: conn})
-			t0 := time.Now()
-			defer Metrics.Gauge.Counter(conn.Request().URL.Path).Inc(1).Dec(1)
-			defer ws.Close(c, "exit")
-			defer func() {
-				Metrics.Life.Observe(time.Since(t0).Seconds(), conn.Request().URL.Path)
-			}()
-			ws.loop(c)
+			c, cf := ctx.Span(c, "ws")
+			defer cf(nil)
+
+			defer shutdown.Hold().Release()
+
+			//defer metrics.WS{Path: path}.Start().End(c)
+			ws := Conn{
+				h: this,
+				ws: &wsImpl{
+					conn: conn,
+				},
+			}
+			defer ws.Close(c, 1000)
+			ws.Loop(c)
 		}),
+		Handshake: func(c *websocket.Config, r *http.Request) error {
+			// NOTE(oha): since the current WS implementation require a jwt token to be sent as a payload
+			// there is no risk of cross domain forgery, since they will still need to grab the token in the first place
+			//log.Debugf(r.Context(), "WS: handshake origin: %q", r.Header.Get("Origin"))
+			return nil
+		},
 	}
-	return this, nil
+	return x
 }
 
-func (this *Handler[State]) connect(c ctx.C, ws ws) *Conn[State] {
-	c, cf := ctx.Span(c, "ws")
-	defer cf(nil)
-
-	sid := uuid.NewString()
-	c = ctx.WithTag(c, "sid", sid)
-
-	defer shutdown.Hold().Release() // prevents shutdown
-
-	//defer metrics.WS{Path: path}.Start().End(c)
-
-	conn := &Conn[State]{
-		h:   this,
-		sid: sid,
-		ws:  ws,
+func (this *Handler) Register(c ctx.C, obj any) error {
+	name, h, err := inspect(c, obj)
+	if err != nil {
+		return err
 	}
-
-	if this.OnConnect != nil {
-		this.OnConnect(c, conn)
-	}
-	return conn
-}
-
-func (this *Handler[State]) ServeHTTP(w gohttp.ResponseWriter, r *gohttp.Request) {
-	this.impl.ServeHTTP(w, r)
+	this.byPath.Store(name, func(c ctx.C, conn *Conn, f Frame) error {
+		log.Debugf(c, "open %q...", name)
+		ch := &Channel{
+			Conn:   conn,
+			byPath: map[string]func(c C, n enc.Node) error{},
+			ID:     f.Channel,
+		}
+		conn.byChan.Store(ch.ID, ch)
+		obj := h(ch, f.Data)
+		log.Debugf(c, "opened %+v", obj)
+		return nil
+	})
+	return nil
 }

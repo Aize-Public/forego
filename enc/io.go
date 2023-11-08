@@ -21,7 +21,7 @@ type Reader interface {
 
 type ReaderCloser interface {
 	Reader
-	io.Closer
+	Closer
 }
 
 type ReadWriter interface {
@@ -32,5 +32,9 @@ type ReadWriter interface {
 type ReadWriteCloser interface {
 	Reader
 	Writer
-	io.Closer
+	Closer
+}
+
+type Closer interface {
+	Close(ctx.C) error
 }

@@ -34,7 +34,7 @@ func (this Pairs) native() any {
 func (this Pairs) String() string {
 	list := []string{}
 	for _, p := range this {
-		list = append(list, fmt.Sprintf("%q{json:%q}:%#s", p.Name, p.JSON, p.Value))
+		list = append(list, fmt.Sprintf("%q:%#s", p.JSON, p.Value))
 	}
 	return "enc.Pairs{" + strings.Join(list, ", ") + "}"
 }
@@ -87,4 +87,8 @@ type Pair struct {
 	JSON string // FIXME(oha): we can't really support Name and JSON, we must collapse to name and have all the tags agree
 
 	Value Node
+}
+
+func (this Pair) String() string {
+	return fmt.Sprintf("%q:%s", this.JSON, this.Value)
 }

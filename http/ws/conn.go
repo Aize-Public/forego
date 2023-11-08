@@ -1,208 +1,94 @@
 package ws
 
 import (
-	"errors"
 	"io"
-	"sync"
-	"time"
+	"strings"
 
-	"github.com/Aize-Public/forego/api"
 	"github.com/Aize-Public/forego/ctx"
 	"github.com/Aize-Public/forego/ctx/log"
 	"github.com/Aize-Public/forego/enc"
-	"github.com/Aize-Public/forego/shutdown"
-	"github.com/Aize-Public/forego/utils/lists"
+	"github.com/Aize-Public/forego/utils/sync"
 )
 
-type Conn[State any] struct {
-	h      *Handler[State]
-	m      sync.Mutex
-	sid    string
-	UID    enc.Node
-	closed bool
-	ws     ws
-
-	State State
-
-	onClose []func()
+type Conn struct {
+	h      *Handler
+	ws     impl
+	byChan sync.Map[string, *Channel]
 }
 
-func (this *Conn[State]) SID() string {
-	return this.sid
+func (this *Conn) Close(c ctx.C, reason int) error {
+	return this.ws.Close(c, reason)
 }
 
-func (this *Conn[State]) OnClose(c ctx.C, f func()) {
-	this.m.Lock()
-	defer this.m.Unlock()
-	this.onClose = append(this.onClose, f)
-}
-
-// Send a generic payload (no frame is added, which means the client won't recognize this as a reply to a channel or anything like that)
-// most likely you don't want to use this
-func (this *Conn[State]) Send(c ctx.C, obj any) error {
-	this.m.Lock()
-	defer this.m.Unlock()
-	if this.closed {
-		return ctx.NewErrorf(c, "closed")
-	}
-	n, err := enc.Marshal(c, obj)
-	if err != nil {
-		return err
-	}
-	return this.ws.Write(c, n)
-}
-
-func (this *Conn[State]) loop(c ctx.C) {
-	// To make thing safe and not leaking, we follow this pattern
-	// no matter what, if the connectsion closes, the read-loop closes as well
-	// which then closes the inbox
-	// which then closes the operational loop
-	// which then returns
-	// this means we should always try to close the connect to abort
+func (this *Conn) Loop(c ctx.C) error {
 	inbox := make(chan enc.Node)
 	go func() {
-		defer close(inbox) // this will tear all down
+		defer close(inbox)
 		for {
-			n, err := this.ws.Read(c) //NOTE(oha): read(c) might not be able to honor c.Done()
-			if err != nil {
-				if errors.Is(err, io.EOF) {
-					//log.Debugf(c, "ws read: %v", err)
-				} else {
-					log.Warnf(c, "can't ws read: %v (%v)", err, c.Err())
-				}
+			n, err := this.ws.Read(c)
+			switch err {
+			case io.EOF:
+				log.Debugf(c, "inbox: EOF")
 				return
-			}
-			select {
-			case inbox <- n:
-			case <-c.Done():
-				if err != nil {
-					log.Debugf(c, "ws read loop aborted: %v", c.Err())
+			default:
+				log.Warnf(c, "inbox: %v", err)
+				return
+			case nil:
+				select {
+				case inbox <- n:
+				case <-c.Done():
+					log.Warnf(c, "inbox: %v", err)
 					return
 				}
 			}
 		}
 	}()
-
-	shutwarn := shutdown.Started()
+	defer this.Close(c, 1000)
 	for {
 		select {
 		case <-c.Done():
-			log.Warnf(c, "cancel: %v", ctx.Cause(c))
-			this.Close(c, "cancel")
-			return
-
-		case <-shutwarn:
-			this.h.OnShutdown(c, this)
-			shutwarn = nil // don't fire again
-			time.AfterFunc(5*time.Second, func() {
-				this.Close(c, "shutdown")
-			})
-
+			return c.Err()
 		case n, ok := <-inbox:
 			if !ok {
-				log.Debugf(c, "inbox closed")
-				return
+				return ctx.NewErrorf(c, "inbox closed")
 			}
-			c = ctx.WithTracking(c, "")
-			err := this.onData(c, n)
+			var f Frame
+			err := enc.Unmarshal(c, n, &f)
 			if err != nil {
-				log.Warnf(c, "can't understand the client: %v", err)
-				err = this.Send(c, Frame{
-					Error:    err.Error(), // TODO only for 4xx? close on others?
-					Tracking: ctx.GetTracking(c),
-				})
-				if err != nil {
-					log.Warnf(c, "can't write: %v", err)
-					return
-				}
+				log.Warnf(c, "can't parse request: %v", err)
+				continue
+			}
+			err = this.onData(c, f) // go routine?
+			if err != nil {
+				log.Errorf(c, "can't process request: %v", err)
+				continue
 			}
 		}
 	}
 }
 
-func (this *Conn[State]) onData(c ctx.C, n enc.Node) error {
-	var f Frame
-	err := enc.Unmarshal(c, n, &f)
-	if err != nil {
-		return err
+func (this *Conn) onData(c ctx.C, f Frame) error {
+	switch f.Type {
+	case "close":
+		// WAIT FOR STUFF?
+		return this.Close(c, 1000)
 	}
-	log.Debugf(c, "onData(%+v) => %+v", n, f)
-	s, found := this.h.resolver[f.Path]
-	if !found {
-		return ctx.NewErrorf(c, "invalid path %q", f.Path)
+	if ch := this.byChan.Get(f.Channel); ch != nil {
+		return ch.onData(c, f)
 	}
-	req := api.JSON{
-		Data: f.Data.(enc.Map), // TODO FIXME
-		UID:  this.UID,
+	if h := this.h.byPath.Get(f.Path); h != nil {
+		return h(c, this, f)
 	}
-	obj, err := s.Server().Recv(c, &req)
-	if err != nil {
-		return err
-	}
-	r := Request[State]{
-		Conn:    this,
-		Channel: f.Channel,
-	}
-	t0 := time.Now()
-	err = obj.Do(c, r)
-	dt := time.Since(t0)
-	if err != nil {
-		Metrics.Request.Observe(dt.Seconds(), f.Path, "err")
-		_ = r.Error(c, err)
-		return nil
-	}
-	Metrics.Request.Observe(dt.Seconds(), f.Path, "ok")
-	res := api.JSON{}
-	err = s.Server().Send(c, obj, &res)
-	if err != nil {
-		return err
-	}
-	return this.Send(c, Frame{
-		Path:     s.Path(),
-		Channel:  f.Channel,
-		Data:     res.Data,
-		Tracking: ctx.GetTracking(c),
-	})
+	return ctx.NewErrorf(c, "unknown channel or path")
 }
 
-func (this *Conn[State]) Close(c ctx.C, reason string) error {
-	this.m.Lock()
-	defer this.m.Unlock()
-	if this.closed {
-		return ctx.NewErrorf(c, "dup close: %q", reason)
-	}
-	fs := this.onClose
-	lists.Reverse(fs)
-	for _, f := range fs {
-		f()
-	}
-	// TODO send reason
-	err := this.ws.Close() // code 1000
-	return ctx.WrapError(c, err)
+func (this *Conn) Send(c ctx.C, f Frame) error {
+	return this.ws.Write(c, enc.MustMarshal(c, f))
 }
 
-type Request[State any] struct {
-	*Conn[State]
-	Channel string
-}
-
-// send a reply to the same channel
-func (this Request[State]) Reply(c ctx.C, obj any) error {
-	n, err := enc.Marshal(c, obj)
-	if err != nil {
-		return err
+func toLowerFirst(s string) string {
+	if len(s) == 0 {
+		return ""
 	}
-	return this.Conn.Send(c, Frame{
-		Channel: this.Channel,
-		Data:    n, // TODO(oha): can we make this generic?
-	})
-}
-
-// send an application error to the client on the same channel
-func (this Request[State]) Error(c ctx.C, err error) error {
-	return this.Conn.Send(c, Frame{
-		Channel:  this.Channel,
-		Error:    err.Error(),
-		Tracking: ctx.GetTracking(c),
-	})
+	return strings.ToLower(s[0:1]) + s[1:]
 }
