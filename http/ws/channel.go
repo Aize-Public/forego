@@ -67,6 +67,14 @@ func (c C) Reply(path string, obj any) error {
 	})
 }
 
+func (c C) Error(obj any) error {
+	return c.ch.Conn.Send(c, Frame{
+		Channel: c.ch.ID,
+		Type:    "error",
+		Data:    enc.MustMarshal(c, obj),
+	})
+}
+
 func (c C) Close() error {
 	return c.ch.Close(c)
 }
