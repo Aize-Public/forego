@@ -77,27 +77,25 @@ type fieldInit struct {
 	value reflect.Value
 }
 
-func inspect(c ctx.C, obj any) (builder, error) {
+func (this builder) inspect(c ctx.C, obj any) error {
 	rv := reflect.ValueOf(obj)
 	rt := rv.Type()
 	st := rt
 	if st.Kind() == reflect.Pointer {
 		st = rt.Elem()
 	} else {
-		return builder{}, ctx.NewErrorf(c, "must be a pointer to be reasonable state: %T", obj)
+		return ctx.NewErrorf(c, "must be a pointer to be usable as state: %T", obj)
 	}
 
-	builder := builder{
-		name:       toLowerFirst(st.Name()),
-		structType: st,
-	}
-	log.Infof(c, "WS object %q: %v", builder.name, builder.structType)
+	this.name = toLowerFirst(st.Name())
+	this.structType = st
+	log.Infof(c, "WS object %q: %v", this.name, this.structType)
 
 	// shallow copy fields value to the new obj
 	for i := 0; i < rv.Elem().NumField(); i++ {
 		fv := rv.Elem().Field(i)
 		if !fv.IsZero() {
-			builder.fields = append(builder.fields, fieldInit{
+			this.fields = append(this.fields, fieldInit{
 				index: i,
 				value: fv,
 			})
@@ -132,10 +130,10 @@ func inspect(c ctx.C, obj any) (builder, error) {
 			continue
 		}
 		if m.Name == "Init" {
-			builder.constructor = method
+			this.constructor = method
 		} else {
-			builder.methods = append(builder.methods, method)
+			this.methods = append(this.methods, method)
 		}
 	}
-	return builder, nil
+	return nil
 }
