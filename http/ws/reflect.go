@@ -8,115 +8,134 @@ import (
 	"github.com/Aize-Public/forego/enc"
 )
 
-func inspect[T any](c ctx.C, obj T) (string, func(ch *Channel, data enc.Node) T, error) {
+type builder struct {
+	name        string
+	structType  reflect.Type
+	fields      []fieldInit
+	constructor method
+	methods     []method
+}
+
+// init a new object, and bind it's methods to the channel
+func (this builder) build(c C, req enc.Node) any {
+	v := reflect.New(this.structType)
+	for _, c := range this.fields {
+		log.Debugf(nil, "set %v", c.value)
+		v.Elem().Field(c.index).Set(c.value)
+	}
+
+	if this.constructor.methodName != "" {
+		this.constructor.call(c, v, req)
+	}
+
+	// setup channel routing...
+	c.ch.byPath = map[string]func(c C, req enc.Node) error{}
+	for _, method := range this.methods {
+		c.ch.byPath[method.name] = func(c C, req enc.Node) error {
+			return method.call(c, v, req)
+		}
+	}
+
+	return v.Interface()
+}
+
+type method struct {
+	name       string
+	methodName string
+	argument   reflect.Type // may be nil
+}
+
+func (this method) call(c C, obj reflect.Value, request enc.Node) error {
+	args := []reflect.Value{
+		reflect.ValueOf(c),
+	}
+	if this.argument != nil {
+		inv := reflect.New(this.argument)
+		err := enc.Unmarshal(c, request, inv.Interface())
+		if err != nil {
+			return err
+		}
+		args = append(args, inv.Elem())
+	}
+	m := obj.MethodByName(this.methodName)
+	ret := m.Call(args)
+	switch len(ret) {
+	case 0:
+		return nil
+	default:
+		// assume the last one is error
+		ev := ret[len(ret)-1]
+		if ev.IsNil() {
+			return nil
+		}
+		return ev.Interface().(error)
+	}
+}
+
+type fieldInit struct {
+	index int
+	value reflect.Value
+}
+
+func inspect(c ctx.C, obj any) (builder, error) {
 	rv := reflect.ValueOf(obj)
 	rt := rv.Type()
 	st := rt
 	if st.Kind() == reflect.Pointer {
 		st = rt.Elem()
 	} else {
-		return "", nil, ctx.NewErrorf(c, "must be a pointer to be reasonable state: %T", obj)
+		return builder{}, ctx.NewErrorf(c, "must be a pointer to be reasonable state: %T", obj)
 	}
 
-	name := toLowerFirst(st.Name())
-	log.Infof(c, "WS object %q: %v", name, rt)
+	builder := builder{
+		name:       toLowerFirst(st.Name()),
+		structType: st,
+	}
+	log.Infof(c, "WS object %q: %v", builder.name, builder.structType)
 
-	var init []func(v reflect.Value)
+	// shallow copy fields value to the new obj
 	for i := 0; i < rv.Elem().NumField(); i++ {
-		i := i
 		fv := rv.Elem().Field(i)
 		if !fv.IsZero() {
-			init = append(init, func(v reflect.Value) {
-				log.Debugf(nil, "set %v", fv)
-				v.Elem().Field(i).Set(fv)
+			builder.fields = append(builder.fields, fieldInit{
+				index: i,
+				value: fv,
 			})
 		}
 	}
 
-	byPath := map[string]func(c C, v reflect.Value, n enc.Node) error{}
+	// scan methods
 	for i := 0; i < rt.NumMethod(); i++ {
 		m := rt.Method(i)
-		mname := toLowerFirst(m.Name)
+		method := method{
+			name:       toLowerFirst(m.Name),
+			methodName: m.Name,
+		}
 		switch m.Type.NumIn() {
 		case 3:
-			in := m.Type.In(2)
+			method.argument = m.Type.In(2)
 			if m.Type.In(1) != reflect.TypeOf(C{}) {
-				log.Debugf(c, "WS ignoring %q because first arg is %v", mname, m.Type.In(1))
+				log.Debugf(c, "WS ignoring %q because first arg is %v", method.name, method.argument)
+				continue
 			} else {
-				log.Infof(c, "WS handler %q with argument %v", mname, in)
-				byPath[mname] = func(c C, v reflect.Value, n enc.Node) error {
-					//log.Debugf(c, "call %v.%s(%v %v)", rt, mname, in, n)
-					inv := reflect.New(in)
-					err := enc.Unmarshal(c, n, inv.Interface())
-					if err != nil {
-						return err
-					}
-					vals := v.MethodByName(m.Name).Call([]reflect.Value{
-						reflect.ValueOf(c),
-						inv.Elem(),
-					})
-					switch len(vals) {
-					case 0:
-						return nil
-					default:
-						// assume the last one is error
-						ev := vals[len(vals)-1]
-						if ev.IsNil() {
-							return nil
-						}
-						return ev.Interface().(error)
-					}
-				}
+				log.Infof(c, "WS handler %q with argument %v", method.name, method.argument)
 			}
 		case 2:
 			if m.Type.In(1) != reflect.TypeOf(C{}) {
-				log.Debugf(c, "WS ignoring %q because first arg is %v", mname, m.Type.In(1))
+				log.Debugf(c, "WS ignoring %q because first arg is %v", method.name, method.argument)
+				continue
 			} else {
-				log.Infof(c, "WS handler %q with no args", mname)
-				byPath[mname] = func(c C, v reflect.Value, n enc.Node) error {
-					//log.Debugf(c, "ch(%q) %v <= %v", mname, v, n)
-					vals := v.MethodByName(m.Name).Call([]reflect.Value{
-						reflect.ValueOf(c),
-					})
-					switch len(vals) {
-					case 0:
-						return nil
-					default:
-						// assume the last one is error
-						ev := vals[len(vals)-1]
-						if ev.IsNil() {
-							return nil
-						}
-						return ev.Interface().(error)
-					}
-				}
+				log.Infof(c, "WS handler %q with no args", method.name)
 			}
 		default:
-			log.Debugf(c, "WS ignoring %q because %d args", mname, m.Type.NumIn())
+			log.Debugf(c, "WS ignoring %q because %d args", method.name, method.argument)
+			continue
+		}
+		if m.Name == "Init" {
+			builder.constructor = method
+		} else {
+			builder.methods = append(builder.methods, method)
 		}
 	}
-	return name, func(ch *Channel, data enc.Node) T {
-		v := reflect.New(st)
-		for _, f := range init {
-			f(v)
-		}
-		ch.byPath = map[string]func(c C, n enc.Node) error{}
-		for path, h := range byPath {
-			path := path
-			h := h
-			if path == "init" {
-				log.Debugf(c, "WS init(%v)", data)
-				h(C{
-					C:  c,
-					ch: ch,
-				}, v, data)
-			} else {
-				ch.byPath[path] = func(c C, n enc.Node) error {
-					log.Debugf(c, "WS reflecting %+v .%s", v, path)
-					return h(c, v, n)
-				}
-			}
-		}
-		return v.Interface().(T)
-	}, nil
+	return builder, nil
 }

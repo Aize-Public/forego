@@ -46,20 +46,23 @@ func (this *Handler) Server() websocket.Server {
 }
 
 func (this *Handler) Register(c ctx.C, obj any) error {
-	name, h, err := inspect(c, obj)
+	builder, err := inspect(c, obj)
 	if err != nil {
 		return err
 	}
-	this.byPath.Store(name, func(c ctx.C, conn *Conn, f Frame) error {
-		log.Debugf(c, "open %q...", name)
+	this.byPath.Store(builder.name, func(c ctx.C, conn *Conn, f Frame) error {
+		log.Debugf(c, "new %q...", builder.name)
 		ch := &Channel{
 			Conn:   conn,
 			byPath: map[string]func(c C, n enc.Node) error{},
 			ID:     f.Channel,
 		}
 		conn.byChan.Store(ch.ID, ch)
-		obj := h(ch, f.Data)
-		log.Debugf(c, "opened %+v", obj)
+		obj := builder.build(C{
+			C:  c,
+			ch: ch,
+		}, f.Data)
+		log.Debugf(c, "new %+v", obj)
 		return nil
 	})
 	return nil

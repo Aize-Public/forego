@@ -72,14 +72,17 @@ func (this *Conn) onData(c ctx.C, f Frame) error {
 	case "close":
 		// WAIT FOR STUFF?
 		return this.Close(c, 1000)
+	case "new", "open":
+		if h := this.h.byPath.Get(f.Path); h != nil {
+			return h(c, this, f)
+		}
+		return ctx.NewErrorf(c, "unknown path")
+	default:
+		if ch := this.byChan.Get(f.Channel); ch != nil {
+			return ch.onData(c, f)
+		}
+		return ctx.NewErrorf(c, "unknown channel")
 	}
-	if ch := this.byChan.Get(f.Channel); ch != nil {
-		return ch.onData(c, f)
-	}
-	if h := this.h.byPath.Get(f.Path); h != nil {
-		return h(c, this, f)
-	}
-	return ctx.NewErrorf(c, "unknown channel or path")
 }
 
 func (this *Conn) Send(c ctx.C, f Frame) error {

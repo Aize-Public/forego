@@ -2,6 +2,8 @@
 
 This library allows you to bind multiple objects to a WebSocket, exposing some of their methods.
 
+You could call it RPC over Websockets.
+
 
 Example:
 
@@ -12,7 +14,7 @@ Example:
      ct int
    }
 
-   // maps to `inc` unless overridden
+   // exposes `inc` to the client, allowing for a int payload
    func (this *Counter) Inc(c ws.C, amt int) error {
      if amt < this.MinIncrement {
        amt = this.MinIncrement
@@ -21,13 +23,13 @@ Example:
      return nil
    }
 
-   //  maps to `get` unless overridden
+   // exposes `get` so the client can check the current value of the counter
    func (this *Counter) Get(c ws.C) error {
      return c.Reply("ct", this.ct)
    }
 ```   
 
-Bound to a server like:
+Bound to an http server like:
 
 ```go
 	h := ws.Handler{}
@@ -35,7 +37,7 @@ Bound to a server like:
 	s.Mux().Handle("/counter/ws/v1", h.Server()) // `h.Server()` returns an http.Handler
 ```
 
-After a clients connect, it can instantiate a new Counter by sending:
+After a clients connect, it will instantiate a new Counter by sending:
 
 ```
 {
