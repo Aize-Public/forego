@@ -2,6 +2,7 @@ package ws
 
 import (
 	"reflect"
+	"strings"
 
 	"github.com/Aize-Public/forego/ctx"
 	"github.com/Aize-Public/forego/ctx/log"
@@ -77,23 +78,24 @@ type fieldInit struct {
 	value reflect.Value
 }
 
-func (this builder) inspect(c ctx.C, obj any) error {
-	rv := reflect.ValueOf(obj)
-	rt := rv.Type()
-	st := rt
-	if st.Kind() == reflect.Pointer {
-		st = rt.Elem()
-	} else {
-		return ctx.NewErrorf(c, "must be a pointer to be usable as state: %T", obj)
+func (this *builder) inspect(c ctx.C, obj any) error {
+	origVal := reflect.ValueOf(obj)
+	switch origVal.Kind() {
+	case reflect.Pointer:
+	case reflect.Struct:
+		origVal = origVal.Addr() // make sure it's a pointer
+	default:
+		return ctx.NewErrorf(c, "expected struct or *struct, got %T", obj)
 	}
+	this.structType = origVal.Type().Elem()
+	ptrType := origVal.Type()
 
-	this.name = toLowerFirst(st.Name())
-	this.structType = st
+	this.name = toLowerFirst(this.structType.Name())
 	log.Infof(c, "WS object %q: %v", this.name, this.structType)
 
 	// shallow copy fields value to the new obj
-	for i := 0; i < rv.Elem().NumField(); i++ {
-		fv := rv.Elem().Field(i)
+	for i := 0; i < origVal.Elem().NumField(); i++ {
+		fv := origVal.Elem().Field(i)
 		if !fv.IsZero() {
 			this.fields = append(this.fields, fieldInit{
 				index: i,
@@ -103,8 +105,8 @@ func (this builder) inspect(c ctx.C, obj any) error {
 	}
 
 	// scan methods
-	for i := 0; i < rt.NumMethod(); i++ {
-		m := rt.Method(i)
+	for i := 0; i < ptrType.NumMethod(); i++ {
+		m := ptrType.Method(i)
 		method := method{
 			name:       toLowerFirst(m.Name),
 			methodName: m.Name,
@@ -136,4 +138,11 @@ func (this builder) inspect(c ctx.C, obj any) error {
 		}
 	}
 	return nil
+}
+
+func toLowerFirst(s string) string {
+	if len(s) == 0 {
+		return ""
+	}
+	return strings.ToLower(s[0:1]) + s[1:]
 }

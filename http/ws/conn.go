@@ -2,7 +2,6 @@ package ws
 
 import (
 	"io"
-	"strings"
 
 	"github.com/Aize-Public/forego/ctx"
 	"github.com/Aize-Public/forego/ctx/log"
@@ -76,7 +75,7 @@ func (this *Conn) onData(c ctx.C, f Frame) error {
 		if h := this.h.byPath.Get(f.Path); h != nil {
 			return h(c, this, f)
 		}
-		return ctx.NewErrorf(c, "unknown path")
+		return ctx.NewErrorf(c, "unknown path: %q", f.Path)
 	default:
 		if ch := this.byChan.Get(f.Channel); ch != nil {
 			return ch.onData(c, f)
@@ -87,11 +86,4 @@ func (this *Conn) onData(c ctx.C, f Frame) error {
 
 func (this *Conn) Send(c ctx.C, f Frame) error {
 	return this.ws.Write(c, enc.MustMarshal(c, f))
-}
-
-func toLowerFirst(s string) string {
-	if len(s) == 0 {
-		return ""
-	}
-	return strings.ToLower(s[0:1]) + s[1:]
 }
