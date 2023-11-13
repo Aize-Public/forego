@@ -108,3 +108,29 @@ TODO: allow overrides
 ## Test
 
 Since all the bindings to the WebSocket is automatic, you could test the object directly for functionalities and ignore the bindings entirely
+
+Alternatively you can use the provided test client:
+
+```go
+	h := ws.Handler{}
+	_ = h.Register(c, &Example{})
+	cli := h.NewTest(t)
+
+	send, err := cli.Open(c, "example", nil, func(c ctx.C, f ws.Frame) error {
+		switch f.Type {
+		case "close":
+			t.Logf("recv CLOSED")
+		default:
+			t.Logf("recv %+v", f.Data)
+		}
+		return nil
+	})
+```
+
+## `Handler{}.Server()`
+
+calling `.Server()` on a handler, will create an `http.Handler` which can be used on any http server.
+
+Internally it uses `golang.org/x/net/websocket` which implements `http.Handler`
+
+you might need to modify the `.Handshake` function pointer, by default it accept from the same origin

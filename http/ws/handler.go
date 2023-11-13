@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/Aize-Public/forego/ctx"
@@ -16,6 +17,8 @@ type Handler struct {
 }
 
 // return a websocket.Server which can be used as an http.Handler
+// Note: it sets a default Handshake handler which accept any requests,
+// you might need to change it if you need to control the `Origin` header.
 func (this *Handler) Server() websocket.Server {
 	x := websocket.Server{
 		Handler: websocket.Handler(func(conn *websocket.Conn) {
@@ -35,11 +38,12 @@ func (this *Handler) Server() websocket.Server {
 			defer ws.Close(c, 1000)
 			ws.Loop(c)
 		}),
-		Handshake: func(c *websocket.Config, r *http.Request) error {
-			// NOTE(oha): since the current WS implementation require a jwt token to be sent as a payload
-			// there is no risk of cross domain forgery, since they will still need to grab the token in the first place
-			//log.Debugf(r.Context(), "WS: handshake origin: %q", r.Header.Get("Origin"))
-			return nil
+		Handshake: func(config *websocket.Config, req *http.Request) (err error) {
+			config.Origin, err = websocket.Origin(config, req)
+			if err == nil && config.Origin == nil {
+				return fmt.Errorf("null origin")
+			}
+			return err
 		},
 	}
 	return x
