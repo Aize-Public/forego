@@ -29,12 +29,15 @@ func TestAPI(t *testing.T) {
 	t.Logf("client send...")
 	err = cli.Send(c, &obj, data)
 	test.NoError(t, err)
+
 	t.Logf("request: %s", data.Data)
 	test.NotEmpty(t, data.Data)
 
 	t.Logf("auth...")
+	// as example, we just inject a string here, implementation should use
+	// jwt tokens or other authentication mechanism, and place the
+	// encoded result in the .UID field here
 	data.UID, _ = enc.Marshal(c, alice)
-	//data.UID, _ = json.Marshal(alice)
 
 	{
 		t.Logf("server recv...")
@@ -44,7 +47,7 @@ func TestAPI(t *testing.T) {
 		test.EqualsJSON(t, alice, obj.UID)
 
 		t.Logf("Foo()ing...")
-		err = obj.Foo(c)
+		err = obj.Do(c)
 		test.NoError(t, err)
 
 		t.Logf("server send...")
@@ -70,7 +73,7 @@ type WordCount struct {
 	Ct  int         `api:"out" json:"ct"`
 }
 
-func (this *WordCount) Foo(ctx.C) error {
-	this.Ct = len(strings.Split(this.Str, " "))
+func (this *WordCount) Do(ctx.C) error {
+	this.Ct = len(strings.Fields(this.Str))
 	return nil
 }
