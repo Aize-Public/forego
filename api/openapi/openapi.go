@@ -8,11 +8,12 @@ func NewService(title string) *Service {
 	out.Info.Title = title
 	out.Info.License.Name = "private"
 	out.Info.Version = "0.0"
-	out.Components.SecurityScheme = map[string]*SecurityScheme{}
-	out.Components.SecurityScheme["jwt"] = &SecurityScheme{
-		Type:         "http",
-		Scheme:       "bearer",
-		BearerFormat: "JWT",
+	out.Components.SecurityScheme = map[string]*SecurityScheme{
+		"jwt": {
+			Type:         "http",
+			Scheme:       "bearer",
+			BearerFormat: "JWT",
+		},
 	}
 	return out
 }

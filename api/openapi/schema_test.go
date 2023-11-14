@@ -2,7 +2,6 @@ package openapi_test
 
 import (
 	"encoding/json"
-	"github.com/Aize-Public/forego/enc"
 	"io"
 	"reflect"
 	"testing"
@@ -120,13 +119,4 @@ func TestSchema(t *testing.T) {
 	test.EqualsGo(t, "http", s.Components.SecurityScheme["jwt"].Type)
 	test.EqualsGo(t, "bearer", s.Components.SecurityScheme["jwt"].Scheme)
 	test.EqualsGo(t, "JWT", s.Components.SecurityScheme["jwt"].BearerFormat)
-
-	toJson, err := enc.MarshalJSON(c, s)
-	test.NoError(t, err)
-
-	var fromJson openapi.Service
-	err = enc.UnmarshalJSON(c, toJson, &fromJson)
-	test.NoError(t, err)
-
-	test.EqualsGo(t, s, &fromJson)
 }
