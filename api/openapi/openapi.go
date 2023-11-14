@@ -1,9 +1,5 @@
 package openapi
 
-import (
-	"github.com/Aize-Public/forego/utils/sync"
-)
-
 func NewService(title string) *Service {
 	out := &Service{
 		OpenAPI: "3.0.0",
@@ -12,7 +8,12 @@ func NewService(title string) *Service {
 	out.Info.Title = title
 	out.Info.License.Name = "private"
 	out.Info.Version = "0.0"
-	out.Components.AddSecurityScheme("jwt").SetJWT()
+	out.Components.SecurityScheme = map[string]*SecurityScheme{}
+	out.Components.SecurityScheme["jwt"] = &SecurityScheme{
+		Type:         "http",
+		Scheme:       "bearer",
+		BearerFormat: "JWT",
+	}
 	return out
 }
 
@@ -31,15 +32,10 @@ type Service struct {
 }
 
 type Component struct {
-	SecurityScheme sync.Map[string, *SecurityScheme] `json:"securitySchemes"`
-	Parameters     map[string]*Parameter             `json:"parameters,omitempty"`
-	Schemas        map[string]*Schema                `json:"schemas,omitempty"`
+	SecurityScheme map[string]*SecurityScheme `json:"securitySchemes"`
+	Parameters     map[string]*Parameter      `json:"parameters,omitempty"`
+	Schemas        map[string]*Schema         `json:"schemas,omitempty"`
 }
-
-func (this *Component) AddSecurityScheme(name string) *SecurityScheme {
-	return this.SecurityScheme.GetOrStore(name, &SecurityScheme{})
-}
-
 type SecurityScheme struct {
 	Type        string `json:"type"` // apiKey, http, mutualTLS, oauth2, openIdConnect
 	Description string `json:"description"`
@@ -51,12 +47,6 @@ type SecurityScheme struct {
 	// apiKey
 	In   string `json:"in,omitempty"` // query, header, cookie
 	Name string `json:"name,omitempty"`
-}
-
-func (this *SecurityScheme) SetJWT() {
-	this.Type = "http"
-	this.Scheme = "bearer"
-	this.BearerFormat = "JWT"
 }
 
 type Parameter struct {
