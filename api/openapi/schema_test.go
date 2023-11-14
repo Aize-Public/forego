@@ -113,4 +113,10 @@ func TestSchema(t *testing.T) {
 	test.NotNil(t, subSchema.Properties["raw"])
 	test.EqualsGo(t, "object", subSchema.Properties["raw"].Type)
 	test.EqualsGo(t, "", subSchema.Properties["raw"].Format)
+
+	test.NotNil(t, s.Components.SecurityScheme)
+	test.NotNil(t, s.Components.SecurityScheme["jwt"])
+	test.EqualsGo(t, "http", s.Components.SecurityScheme["jwt"].Type)
+	test.EqualsGo(t, "bearer", s.Components.SecurityScheme["jwt"].Scheme)
+	test.EqualsGo(t, "JWT", s.Components.SecurityScheme["jwt"].BearerFormat)
 }

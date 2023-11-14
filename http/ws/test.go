@@ -47,7 +47,9 @@ func (this *testWS) Write(c ctx.C, n enc.Node) error {
 		return io.ErrClosedPipe
 	}
 	var f Frame
-	enc.MustUnmarshal(c, n, &f)
+	if err := enc.Unmarshal(c, n, &f); err != nil {
+		return ctx.WrapError(c, err)
+	}
 
 	h := this.byChan[f.Channel]
 	if h == nil {
