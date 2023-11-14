@@ -16,9 +16,9 @@ var _ enc.Unmarshaler = (*Map[string, any])(nil)
 
 func (this *Map[K, V]) Map() map[K]V {
 	m := map[K]V{}
-	this.Range(func(k K, v V) bool {
+	_ = this.RangeErr(func(k K, v V) error {
 		m[k] = v
-		return true
+		return nil
 	})
 	return m
 }
@@ -93,6 +93,16 @@ func (this *Map[K, V]) Range(f func(key K, val V) bool) {
 	this.m.Range(func(key, val any) bool {
 		return f(key.(K), val.(V))
 	})
+}
+
+// like Range, but using errors not bools
+func (this *Map[K, V]) RangeErr(f func(key K, val V) error) error {
+	var err error
+	this.m.Range(func(key, val any) bool {
+		err = f(key.(K), val.(V))
+		return err == nil
+	})
+	return err
 }
 
 func (this *Map[K, V]) Delete(key K) {

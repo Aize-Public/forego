@@ -5,7 +5,7 @@ import (
 	"io"
 	"sync/atomic"
 
-	"github.com/Aize-Public/forego/sync"
+	"github.com/Aize-Public/forego/utils/sync"
 )
 
 type gaugeEntry interface {
@@ -64,7 +64,7 @@ func (this *Gauge) SetFunc(f func() float64, labels ...string) *Gauge {
 
 func (this *Gauge) Print(name string, w io.Writer) error {
 	first := true
-	return this.val.Range(func(l string, x gaugeEntry) error {
+	return this.val.RangeErr(func(l string, x gaugeEntry) error {
 		if first {
 			first = false
 			_, err := fmt.Fprintf(w, "# HELP %s %s\n", name, this.Desc)

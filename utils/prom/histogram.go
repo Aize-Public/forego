@@ -5,7 +5,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/Aize-Public/forego/sync"
+	"github.com/Aize-Public/forego/utils/sync"
 )
 
 type Histogram struct {
@@ -55,7 +55,7 @@ func (this *histogramTS) observe(le []float64, val float64) {
 
 func (this *Histogram) Print(name string, w io.Writer) (err error) {
 	first := true
-	return this.val.Range(func(l string, v *histogramTS) error {
+	return this.val.RangeErr(func(l string, v *histogramTS) error {
 		if first {
 			first = false
 			_, err := fmt.Fprintf(w, "# HELP %s %s\n", name, this.Desc)

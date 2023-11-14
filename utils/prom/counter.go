@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/Aize-Public/forego/sync"
+	"github.com/Aize-Public/forego/utils/sync"
 )
 
 type Counter struct {
@@ -33,7 +33,7 @@ func (this *counter) observe(val float64) {
 
 func (this *Counter) Print(w io.Writer) error {
 	first := true
-	return this.val.Range(func(l string, v *counter) error {
+	return this.val.RangeErr(func(l string, v *counter) error {
 		if first {
 			first = false
 			_, err := fmt.Fprintf(w, "# HELP %s %s\n", this.Name, this.Desc)
