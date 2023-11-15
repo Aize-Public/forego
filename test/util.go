@@ -14,6 +14,7 @@ import (
 // helper, returns the jsonish value as string, or an error as string
 // just to make tests easier to manage
 // NOTE: we assume the error message is never a valid jsonish, so there is no ambiguity
+// FIXME: canonicalize so strings can be compared easily
 func jsonish(v any) string {
 	switch v := v.(type) {
 	case json.RawMessage:
@@ -40,12 +41,14 @@ type res struct {
 	msg     string
 }
 
+// retrieve the argument of the function
 func (res res) argument(above, argNum int) res {
 	call, _, _ := ast.Caller(above + 1)
 	res.msg = call.Args[argNum].Src + ": " + res.msg
 	return res
 }
 
+// retrieve the argument of the function, and follow where it was assigned if it's a simple variable
 func (res res) assignment(above, argNum int) res { // nolint:unused
 	res.msg = ast.Assignment(above+1, argNum) + ": " + res.msg
 	return res

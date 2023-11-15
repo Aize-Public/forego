@@ -18,7 +18,7 @@ func NoError(t *testing.T, err error) {
 		if errors.As(err, &cErr) {
 			Fail(t, "%v\n\t%s", err, strings.Join(cErr.Stack, "\n\t"))
 		} else {
-			Fail(t, "%v", err)
+			Fail(t, "%T %v", err, err)
 		}
 	}
 }
