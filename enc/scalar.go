@@ -37,50 +37,6 @@ func (this String) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) e
 	return nil
 }
 
-/*
-// NOTE(oha) do we need to split into Integers and Floats?
-type Number float64
-
-var _ Node = Number(1.0)
-
-func (this Number) native() any {
-	return float64(this)
-}
-
-func (this Number) GoString() string {
-	return fmt.Sprintf("enc.Number{%v}", float64(this))
-}
-
-func (this Number) String() string {
-	return fmt.Sprintf("%v", float64(this))
-}
-
-func (this Number) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) error {
-	switch into.Kind() {
-	case reflect.Float64, reflect.Float32:
-		into.SetFloat(float64(this))
-	case reflect.Int,
-		reflect.Int8,
-		reflect.Int16,
-		reflect.Int32,
-		reflect.Int64:
-		into.SetInt(int64(this))
-	case reflect.Uint,
-		reflect.Uint8,
-		reflect.Uint16,
-		reflect.Uint32,
-		reflect.Uint64:
-		into.SetUint(uint64(this))
-	case reflect.Interface:
-		v := reflect.ValueOf(this.native())
-		into.Set(v)
-	default:
-		return ctx.NewErrorf(c, "can't unmarshal %s %T into %v", handler.path, this, into.Type())
-	}
-	return nil
-}
-*/
-
 type Bool bool
 
 var _ Node = Bool(true)

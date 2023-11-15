@@ -29,6 +29,13 @@ func (this Handler) Append(p any) Handler {
 
 var ineff = map[string]bool{}
 
+func MustUnmarshal(c ctx.C, n Node, into any) {
+	err := Handler{}.Unmarshal(c, n, into)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func Unmarshal(c ctx.C, n Node, into any) error {
 	return Handler{}.Unmarshal(c, n, into)
 }
