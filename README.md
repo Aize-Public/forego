@@ -8,8 +8,11 @@ Some subfolders have a README with more details:
 
 * [api](./api/)
 * [test](./test/)
+* [enc](./enc/)
 * [http](./http/)
 * [http/ws](./http/ws/)
+* [shutdown](./shutdown/)
+* [utils/prom](./utils/prom/)
 
 
 
