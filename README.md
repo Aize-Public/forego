@@ -6,10 +6,10 @@ Go framework to simplify testing, http/ws API, authentication/authorization, etc
 
 Some subfolders have a README with more details:
 
-* (api)[./api/]
-* (test)[./test/]
-* (http)[./http/]
-* (http/ws)[./http/ws/]
+* (api)[api/README.md]
+* (test)[test/README.md]
+* (http)[http/README.md]
+* (http/ws)[http/ws/README.md]
 
 
 
