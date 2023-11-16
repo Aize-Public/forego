@@ -4,6 +4,15 @@ THIS MODULE IS STILL A WORK IN PROGRESS AND NOT READY FOR USE
 
 Go framework to simplify testing, http/ws API, authentication/authorization, etc...
 
+Some subfolders have a README with more details:
+
+* (api)[./api/]
+* (test)[./test/]
+* (http)[./http/]
+* (http/ws)[./http/ws/]
+
+
+
 ## `ctx`
 
 We expand from `context.Context` with few features and quality of life:
@@ -27,7 +36,7 @@ It also make it coherent when using other libraries, since they will still carry
 
 All logging is `JSON` lines, e.g.:
 
-```java
+```
 {"level":"debug","src":"github.com/Aize-Public/forego/http/server.go:83","time":"2023-06-01T07:18:31.007411033+02:00","message":"listening to :8080","tags":{"service":"viewer"}}
 ```
 
