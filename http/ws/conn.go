@@ -72,8 +72,8 @@ func (this *Conn) onData(c ctx.C, f Frame) error {
 		// WAIT FOR STUFF?
 		return this.Close(c, 1000)
 	case "new", "open":
-		if h := this.h.byPath.Get(f.Path); h != nil {
-			return h(c, this, f)
+		if fn := this.h.byPath.Get(f.Path); fn != nil {
+			return fn(c, this, f)
 		}
 		return ctx.NewErrorf(c, "unknown path: %q", f.Path)
 	default:

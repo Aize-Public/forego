@@ -23,15 +23,12 @@ func (this *Channel) Close(c ctx.C) error {
 }
 
 func (this *Channel) onData(c ctx.C, f Frame) error {
-	h := this.byPath[f.Path]
-	if h == nil {
+	fn := this.byPath[f.Path]
+	if fn == nil {
 		return ctx.NewErrorf(c, "no %q for channel %q", f.Path, f.Channel)
 	}
 	log.Debugf(c, "ch[%q].%q(%v)", f.Channel, f.Path, f.Data)
-	err := h(C{
-		C:  c,
-		ch: this,
-	}, f.Data)
+	err := fn(C{C: c, ch: this}, f.Data)
 	if err != nil {
 		//log.Warnf(c, "ws: sending %v", err)
 		_ = this.Conn.Send(c, Frame{
