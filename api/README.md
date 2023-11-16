@@ -83,7 +83,8 @@ When `h.Server().Recv()`, the method `api.ServerRequest.Auth()` is called, which
 
 ## State
 
-As in the example above, 
+As in the example above, you can define properties on the `api` object, which will be copied by reference on each request. 
+This makes it possible to use some shared state or configuration between requests.
 
 
 ## `api.JSON{}`
@@ -101,9 +102,9 @@ Beside the common `json` tag used normally to marshal JSON data, there are few n
 
 This tag could be either `in`, `in,required`, `out`, `both,required` or by default `both`
 
-When unmarshalling a request on a server, only `in`, `in,required` or `both` will be processed.
+When unmarshalling a request on a server, only `in` or `both` will be processed.
 
-Moreover, if `in,required`, or `both,required` but the field is zero, a `400` error is returned
+Moreover, if either of them have `,required` as part of the tag (`in,requred` or `both,required`) but the field is zero, a `400` error is returned
 
 Only fields tagged as `out` or `both` will be marshalled back to the client.
 
@@ -112,15 +113,12 @@ Conversely, the same happen on the client side, just with the roles reversed.
 
 ### `auth`
 
-If a field is marked as `auth`, it will be unmarshalled used the UID provided by the server side plumbing.
+If a field is marked as `auth`, it will be unmarshalled using the UID provided by the server side plumbing.
 
-Moreover, if `auth,required` a 403 should be returned if the authentication token is missing
+Moreover, if `auth,required` a 403 should be returned if no valid authentication token is provided with the request (see `api.ServerRequest.Auth()`).
 
 
 ### `url`
 
-Only one field should have the tag `url`, which provides a definition for the entrypoint of the API, and if fully qualified, can be used from clients 
-directly without overrides.
-
-
+Only one field should have the tag `url`, which provides a definition for the entrypoint of the API, and if fully qualified, can be used from clients directly without overrides for requests over the network. (see `http/client.go Client.API()`)
 
