@@ -49,11 +49,25 @@ The following `struct` will only unmarshal a `enc.Map` or `enc.Pairs`:
   }
 ```
 
-### `enc.Numeric` interface and `enc.Integer`, `enc.Float`
+Note: if the receiving pointer is an `enc.Node` or any other of the other types that implements it, or contains any of them, then
+the data is just shallow copied instead of unmarshalling. Another way to say it is that you can use `enc.Node` instead of `json.RawMessage`
+if you want to delay the unmarshalling of the data, or you can use `enc.Map` to delegate while forcing a json object, and so forth for
+`enc.List` and the other types.
 
-When decoding a `JSON number`, either a `enc.Integer` or a `enc.Float` will be returned, which both implements `enc.Numeric`.
+### `enc.Numeric` interface and `enc.Integer`, `enc.Float` and `enc.Digits`
 
-They can unmarshal similarly to `encoding/json` when you use a `Decoder` with `UseNumber()`.
+When decoding a `JSON number`, a `enc.Digits` is created, which preserve exactly the same data received.
+
+if then further unmarshalled, then appropriate conversions will take place, based on the target type:
+
+If the target is `float`, `int` or `uint` (with any precision), then the digits are parsed accordingly or an error is generated
+
+If the target is `any`, then a `float64` is used (to keep compatibility with `encoding/json`)
+
+When encoding, if the input is `int` or `uint` then `enc.Integer` is used.
+
+For `float` the `enc.Float` is used.
+
 
 ### `enc.String`
 
@@ -143,8 +157,8 @@ func (this *X) Parse(c ctx.C, s string) error {
 To make it use `String()` and `Parse()` when generating `enc.Node`:
 
 ```go
-var _ enc.Marshaler = &X{}
-var _ enc.Unmarshaler = &X{}
+var _ enc.Marshaler = X{} // make sure we can marshal structs, not just pointers
+var _ enc.Unmarshaler = &X{} // only pointers can be used for unmarshalling, tho
 
 func (this X) MarshalNode(c ctx.C) (enc.Node, error) {
 	return enc.String(this.String()), nil
@@ -163,6 +177,10 @@ func (this *X) UnmarshalNode(c ctx.C, n enc.Node) error {
 As you can see, it simply returns and `enc.String` to marshal, and only accept it back when unmarshalling.
 
 To keep compatibility with `encoding/json` you might want to implement the relative versions of those methods too.
+
+### `enc.Time` WIP
+
+there is an ongoing discussion if we should ad a time-like type to simplify handling of type, and enforcing RFC3339
 
 ## `ctx.C`
 
@@ -224,5 +242,5 @@ func (this *X) UnmarshalNode(c ctx.C, n enc.Node) error {
 }
 ```
 
-which means that now any API you have will fail if they contains a type `X` which has a `.Type` which is blacklisted, and
+Which means that now any API you have will fail if they contains a type `X` which has a `.Type` which is blacklisted, and
 that blacklist might change per request, based on the user settings or permissions or so.
