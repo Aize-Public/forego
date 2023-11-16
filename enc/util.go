@@ -80,7 +80,7 @@ func (this Pipe) Write(c ctx.C, n Node) (err error) {
 
 func (this Pipe) Close(c ctx.C) error {
 	defer func() {
-		recover() // ugly, but simplier this way, allowing multiple closes with no side effects
+		_ = recover() // ugly, but simplier this way, allowing multiple closes with no side effects
 	}()
 	close(this.Send)
 	return nil
