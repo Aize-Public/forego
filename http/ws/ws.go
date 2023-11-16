@@ -14,11 +14,11 @@ import (
 
 const ( // https://www.rfc-editor.org/rfc/rfc6455#section-7.4.1
 	EXIT          int = 1000
-	GOING_AWAY        = 1001
-	PROTOCOL_ERR      = 1002
-	RECV_DATA_ERR     = 1003
-	TOO_BIG           = 1009
-	UNEXP_COND        = 1011
+	GOING_AWAY    int = 1001
+	PROTOCOL_ERR  int = 1002
+	RECV_DATA_ERR int = 1003
+	TOO_BIG       int = 1009
+	UNEXP_COND    int = 1011
 )
 
 // low level websocket implementation
@@ -33,11 +33,11 @@ type chanMsg struct {
 }
 
 type chanImpl struct {
-	Send   chan<- chanMsg
-	Recv   <-chan chanMsg
-	closer error
+	Send chan<- chanMsg
+	Recv <-chan chanMsg
 }
 
+/*
 func newChanPipe(len int) (chanImpl, chanImpl) {
 	fwd := make(chan chanMsg, len)
 	bak := make(chan chanMsg, len)
@@ -51,13 +51,10 @@ func newChanPipe(len int) (chanImpl, chanImpl) {
 }
 
 var _ impl = chanImpl{}
+*/
 
 func (this chanImpl) Write(c ctx.C, n enc.Node) error {
 	log.Debugf(c, "%p: sending %+v", this.Send, n)
-	if this.closer != nil {
-		log.Warnf(c, "previous closer %v", this.closer)
-		return ctx.NewErrorf(c, "already closed")
-	}
 	select {
 	case <-c.Done():
 		return c.Err()
@@ -96,10 +93,6 @@ func (this chanImpl) Read(c ctx.C) (enc.Node, error) {
 func (this chanImpl) Close(c ctx.C, reason int) error {
 	time.Sleep(time.Millisecond)
 	log.Debugf(c, "%p: closing %+v", this.Send, reason)
-	if this.closer != nil {
-		log.Warnf(c, "previous closer %v", this.closer)
-		return ctx.NewErrorf(c, "already closed")
-	}
 	select {
 	case <-c.Done():
 		return c.Err()
@@ -107,7 +100,6 @@ func (this chanImpl) Close(c ctx.C, reason int) error {
 		Type: websocket.CloseFrame,
 		Data: enc.Integer(reason),
 	}:
-		this.closer = ctx.NewErrorf(c, "closer")
 		close(this.Send)
 		return nil
 	}

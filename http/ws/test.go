@@ -67,7 +67,7 @@ func (this *Handler) NewTest(t *testing.T) TestClient {
 		h:  this,
 		ws: ws,
 	}
-	go conn.Loop(test.Context(t))
+	go conn.Loop(test.Context(t)) // nolint
 
 	return TestClient{
 		conn: conn,

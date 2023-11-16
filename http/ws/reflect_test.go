@@ -42,7 +42,7 @@ func (this Counter) Special(c C, req struct {
 	return nil
 }
 
-func (this *Counter) internal(c C) error {
+func (this *Counter) internal(c C) error { // nolint (meant to be unused)
 	return nil
 }
 
