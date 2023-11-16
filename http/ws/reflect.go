@@ -35,8 +35,13 @@ func (this builder) build(c C, req enc.Node) any {
 	// setup channel routing...
 	c.ch.byPath = map[string]func(c C, req enc.Node) error{}
 	for _, method := range this.methods {
+		method := method
 		c.ch.byPath[method.name] = func(c C, req enc.Node) error {
-			return method.call(c, v, req)
+			err := method.call(c, v, req)
+			if err != nil {
+				return ctx.NewErrorf(c, "ws[%s|%s]: %v", c.ch.ID, method.name, err)
+			}
+			return nil
 		}
 	}
 
@@ -57,7 +62,7 @@ func (this method) call(c C, obj reflect.Value, request enc.Node) error {
 		inv := reflect.New(this.argument)
 		err := enc.Unmarshal(c, request, inv.Interface())
 		if err != nil {
-			return err
+			return ctx.NewErrorf(c, "reflect[%v].argument: %w", this.name, err)
 		}
 		args = append(args, inv.Elem())
 	}
@@ -98,6 +103,7 @@ func (this *builder) inspect(c ctx.C, obj any) error {
 
 	// shallow copy fields value to the new obj
 	for i := 0; i < origVal.Elem().NumField(); i++ {
+		i := i
 		fv := origVal.Elem().Field(i)
 		if !fv.IsZero() {
 			this.fields = append(this.fields, fieldInit{

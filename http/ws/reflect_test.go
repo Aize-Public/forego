@@ -8,6 +8,7 @@ import (
 	"github.com/Aize-Public/forego/ctx/log"
 	"github.com/Aize-Public/forego/enc"
 	"github.com/Aize-Public/forego/test"
+	"golang.org/x/net/websocket"
 )
 
 type Counter struct {
@@ -88,7 +89,20 @@ func TestReflect(t *testing.T) {
 
 	time.Sleep(time.Millisecond)
 	for msg := range send {
-		t.Logf("resp: %+v", msg)
+		switch msg.Type {
+		case websocket.TextFrame:
+			var f Frame
+			enc.MustUnmarshal(c, msg.Data, &f)
+			if f.Type == "error" {
+				test.Fail(t, "error: %+v", f.Data)
+			} else {
+				test.OK(t, "recv: %+v", f.Data)
+			}
+		case websocket.CloseFrame:
+			t.Logf("CLOSE")
+		default:
+			test.Fail(t, "unexpected %v", msg)
+		}
 	}
 	t.Logf("EXIT")
 }

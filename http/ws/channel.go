@@ -33,6 +33,7 @@ func (this *Channel) onData(c ctx.C, f Frame) error {
 		ch: this,
 	}, f.Data)
 	if err != nil {
+		//log.Warnf(c, "ws: sending %v", err)
 		_ = this.Conn.Send(c, Frame{
 			Channel: this.ID,
 			Type:    "error",
