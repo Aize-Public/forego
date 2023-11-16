@@ -244,3 +244,6 @@ func (this *X) UnmarshalNode(c ctx.C, n enc.Node) error {
 
 Which means that now any API you have will fail if they contains a type `X` which has a `.Type` which is blacklisted, and
 that blacklist might change per request, based on the user settings or permissions or so.
+
+Another advantage of having access to the `ctx.C` is that you can properly use `ctx/log` and still retains tags which might contains
+information helpful for debugging
