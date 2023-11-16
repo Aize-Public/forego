@@ -14,18 +14,17 @@ import (
 // helper, returns the jsonish value as string, or an error as string
 // just to make tests easier to manage
 // NOTE: we assume the error message is never a valid jsonish, so there is no ambiguity
-// FIXME: canonicalize so strings can be compared easily
 func jsonish(v any) string {
-	switch v := v.(type) {
+	switch x := v.(type) {
 	case json.RawMessage:
-		return string(v)
+		_ = json.Unmarshal(x, &v) // make it into any, so we can marshal it again and canonicalize it
 	case []byte:
-		if json.Valid(v) {
-			return string(v)
+		if json.Valid(x) {
+			_ = json.Unmarshal(x, &v) // make it into any, so we can marshal it again and canonicalize it
 		}
 	case string:
-		if json.Valid([]byte(v)) {
-			return v
+		if json.Valid([]byte(x)) {
+			_ = json.Unmarshal([]byte(x), &v) // make it into any, so we can marshal it again and canonicalize it
 		}
 	}
 	//j, err := json.Marshal(v)
