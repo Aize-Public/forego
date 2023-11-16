@@ -33,7 +33,7 @@ func (this *Channel) onData(c ctx.C, f Frame) error {
 		ch: this,
 	}, f.Data)
 	if err != nil {
-		this.Conn.Send(c, Frame{
+		_ = this.Conn.Send(c, Frame{
 			Channel: this.ID,
 			Type:    "error",
 			Data:    enc.MustMarshal(c, err.Error()),

@@ -29,8 +29,7 @@ func (this *Counter) Inc(c C, amt int) error {
 
 func (this Counter) Get(c C) error {
 	log.Warnf(c, "%p.Get()", &this)
-	c.Reply("ct", this.Ct)
-	return nil
+	return c.Reply("ct", this.Ct)
 }
 
 func (this Counter) Special(c C, req struct {
@@ -54,7 +53,7 @@ func TestReflect(t *testing.T) {
 	var _ Frame
 	c := test.Context(t)
 	h := Handler{}
-	h.Register(c, &Counter{})
+	h.MustRegister(c, &Counter{})
 
 	send := make(chan chanMsg, 10)
 	recv := make(chan chanMsg, 10)
@@ -66,25 +65,26 @@ func TestReflect(t *testing.T) {
 		},
 	}
 
-	conn.onData(c, Frame{
+	test.NoError(t, conn.onData(c, Frame{
 		Channel: "001",
 		Path:    "counter",
+		Type:    "open",
 		Data:    enc.Integer(4),
-	})
-	conn.onData(c, Frame{
+	}))
+	test.NoError(t, conn.onData(c, Frame{
 		Channel: "001",
 		Path:    "get",
-	})
-	conn.onData(c, Frame{
+	}))
+	test.NoError(t, conn.onData(c, Frame{
 		Channel: "001",
 		Path:    "inc",
 		Data:    enc.Integer(3),
-	})
-	conn.onData(c, Frame{
+	}))
+	test.NoError(t, conn.onData(c, Frame{
 		Channel: "001",
 		Path:    "get",
-	})
-	conn.Close(c, 1000)
+	}))
+	test.NoError(t, conn.Close(c, 1000))
 
 	time.Sleep(time.Millisecond)
 	for msg := range send {

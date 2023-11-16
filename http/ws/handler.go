@@ -36,7 +36,10 @@ func (this *Handler) Server() websocket.Server {
 				},
 			}
 			defer ws.Close(c, 1000)
-			ws.Loop(c)
+			err := ws.Loop(c)
+			if err != nil {
+				log.Warnf(c, "loop: %v", err)
+			}
 		}),
 		Handshake: func(config *websocket.Config, req *http.Request) (err error) {
 			config.Origin, err = websocket.Origin(config, req)
@@ -47,6 +50,14 @@ func (this *Handler) Server() websocket.Server {
 		},
 	}
 	return x
+}
+
+func (this *Handler) MustRegister(c ctx.C, obj any) *Handler {
+	err := this.Register(c, obj)
+	if err != nil {
+		panic(err)
+	}
+	return this
 }
 
 func (this *Handler) Register(c ctx.C, obj any) error {

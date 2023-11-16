@@ -26,7 +26,10 @@ func (this builder) build(c C, req enc.Node) any {
 	}
 
 	if this.constructor.methodName != "" {
-		this.constructor.call(c, v, req)
+		err := this.constructor.call(c, v, req)
+		if err != nil {
+			return err
+		}
 	}
 
 	// setup channel routing...
