@@ -169,6 +169,9 @@ func (this Server[T]) Recv(c ctx.C, req ServerRequest) (T, error) {
 		if err != nil {
 			return zero, ctx.NewErrorf(c, "can't RecvRequest %T.%s: %w", zero, f.tag.name, err)
 		}
+		if f.tag.required && fv.IsZero() {
+			return zero, ctx.NewErrorf(c, "missing field %q in request", f.tag.name)
+		}
 	}
 	if this.auth != nil {
 		fv := v.Field(this.auth.i)

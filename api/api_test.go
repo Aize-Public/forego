@@ -10,6 +10,24 @@ import (
 	"github.com/Aize-Public/forego/test"
 )
 
+func TestRequired(t *testing.T) {
+	c := test.Context(t)
+
+	t.Logf("handler...")
+	h, err := api.NewHandler(c, &WordCount{})
+	test.NoError(t, err)
+
+	ser := h.Server()
+
+	data := &api.JSON{}
+	data.Data = enc.Map{} // empty request should give a 400
+	data.UID, _ = enc.Marshal(c, UID("alice"))
+
+	t.Logf("server recv...")
+	_, err = ser.Recv(c, data)
+	test.Error(t, err)
+}
+
 func TestAPI(t *testing.T) {
 	c := test.Context(t)
 	alice := UID("alice")
@@ -69,7 +87,7 @@ type UID string
 type WordCount struct {
 	R   api.Request `url:"/wc"`
 	UID UID         `api:"auth,required" json:"uid"`
-	Str string      `api:"in" json:"str"`
+	Str string      `api:"in,required" json:"str"`
 	Ct  int         `api:"out" json:"ct"`
 }
 
