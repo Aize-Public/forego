@@ -14,6 +14,7 @@ var Metrics = struct {
 		Buckets: prom.DefaultBuckets,
 		Labels:  []string{"method", "path", "code"},
 	}),
+	// TODO add more, like active requests gauges, open connections, websockets...
 }
 
 type metric struct {

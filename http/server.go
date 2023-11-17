@@ -37,6 +37,7 @@ func NewServer(c ctx.C) *Server {
 		mux: http.NewServeMux(),
 		OnResponse: func(r Stat) {
 			log.Infof(c, "%s %d in %v", r.Path, r.Code, r.Elapsed)
+			// TODO(oha): move this out, so it won't be overridden
 			metric{
 				Method: r.Method,
 				Code:   r.Code,
@@ -70,6 +71,8 @@ func NewServer(c ctx.C) *Server {
 	this.mux.HandleFunc("/live", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(204)
 	})
+
+	this.ready = 204
 	this.mux.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(int(atomic.LoadInt32(&this.ready)))
 	})
