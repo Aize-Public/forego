@@ -8,29 +8,30 @@ import (
 	"time"
 
 	"github.com/Aize-Public/forego/api/openapi"
+	"github.com/Aize-Public/forego/enc"
 	"github.com/Aize-Public/forego/test"
 )
 
 type Obj struct {
-	Map  map[string]bool `json:"map"`
-	List []Sub           `json:"list"`
+	Map  map[string]bool `json:"map" example:"{\"a\":true, \"b\": false}" doc:"Doc test"`
+	List []Sub           `json:"list" example:"[{\"string\": \"a\", \"int\": 42}, {\"string\": \"b\", \"timestamp\": \"2009-11-10T23:00:00Z\"}]"`
 }
 
 type Sub struct {
-	String  string  `json:"string"`
-	Boolean bool    `json:"boolean"`
-	Float   float64 `json:"float"`
-	Int     int     `json:"int"`
-	Int8    int8    `json:"int8"`
-	Uint64  uint64  `json:"uint64"`
+	String  string  `json:"string" example:"s" doc:"test"`
+	Boolean bool    `json:"boolean" example:"true"`
+	Float   float64 `json:"float" example:"not float"`
+	Int     int     `json:"int" example:"-1"`
+	Int8    int8    `json:"int8" example:"1"`
+	Uint64  uint64  `json:"uint64" example:"not int"`
 
-	Bytes         []byte               `json:"bytes"`
-	Timestamp     time.Time            `json:"timestamp"`
-	Custom        CustomInt            `json:"custom"`
-	Any           any                  `json:"any"`
-	CustomEmptyIF CustomEmptyInterface `json:"customEmptyIF"`
-	SomeInterface io.Reader            `json:"someInterface"`
-	Raw           json.RawMessage      `json:"raw"`
+	Bytes         []byte               `json:"bytes" example:"123"`
+	Timestamp     time.Time            `json:"timestamp" example:"2023-11-10T23:00:00Z"`
+	Custom        CustomInt            `json:"custom" example:"2"`
+	Any           any                  `json:"any" example:"{\"hello\":\"world\"}"`
+	CustomEmptyIF CustomEmptyInterface `json:"customEmptyIF" example:"{\"hello\":\"world\"}"`
+	SomeInterface io.Reader            `json:"someInterface" example:"whatever"`
+	Raw           json.RawMessage      `json:"raw" example:"{\"a\": \"b\", \"c\": [1, 2, 3]}"`
 }
 
 type CustomInt struct {
@@ -50,7 +51,7 @@ func TestSchema(t *testing.T) {
 	sc, err := s.SchemaFromType(c, reflect.TypeOf(Obj{}), nil)
 	test.NoError(t, err)
 	t.Logf("Schema: %+v", sc)
-	test.EqualsGo(t, "#/components/schemas/github.com_Aize-Public_forego_api_openapi_test_Obj", sc.Reference)
+	test.EqualsGo(t, "#/components/schemas/github.com_Aize-Public_forego_api_openapi_test_Obj", sc.AllOf[0].Reference)
 	t.Logf("Components.Schemas: %+v", s.Components.Schemas)
 
 	objSchema := s.Components.Schemas["github.com_Aize-Public_forego_api_openapi_test_Obj"]
@@ -62,57 +63,77 @@ func TestSchema(t *testing.T) {
 	test.EqualsGo(t, "openapi_test.Obj", objSchema.Format)
 	test.NotNil(t, objSchema.Properties["map"])
 	test.EqualsGo(t, "object", objSchema.Properties["map"].Type)
+	test.EqualsGo(t, "Doc test", objSchema.Properties["map"].Description)
+	test.EqualsJSON(t, enc.Map{"a": enc.Bool(true), "b": enc.Bool(false)}, objSchema.Properties["map"].Example)
 	test.NotNil(t, objSchema.Properties["map"].AdditionalProps)
 	test.EqualsGo(t, "boolean", objSchema.Properties["map"].AdditionalProps.Type)
 	test.NotNil(t, objSchema.Properties["list"])
 	test.EqualsGo(t, "array", objSchema.Properties["list"].Type)
+	test.EqualsJSON(t, enc.List{
+		enc.Map{"string": enc.String("a"), "int": enc.Integer(42)},
+		enc.Map{"string": enc.String("b"), "timestamp": enc.String("2009-11-10T23:00:00Z")}},
+		objSchema.Properties["list"].Example)
 	test.NotNil(t, objSchema.Properties["list"].Items)
-	test.EqualsGo(t, "#/components/schemas/github.com_Aize-Public_forego_api_openapi_test_Sub", objSchema.Properties["list"].Items.Reference)
+	test.EqualsGo(t, "#/components/schemas/github.com_Aize-Public_forego_api_openapi_test_Sub", objSchema.Properties["list"].Items.AllOf[0].Reference)
 
 	test.EqualsGo(t, "object", subSchema.Type)
 	test.EqualsGo(t, "openapi_test.Sub", subSchema.Format)
 
 	test.NotNil(t, subSchema.Properties["string"])
 	test.EqualsGo(t, "string", subSchema.Properties["string"].Type)
+	test.EqualsGo(t, "test", subSchema.Properties["string"].Description)
+	test.EqualsJSON(t, "s", subSchema.Properties["string"].Example)
 
 	test.NotNil(t, subSchema.Properties["boolean"])
 	test.EqualsGo(t, "boolean", subSchema.Properties["boolean"].Type)
 	test.EqualsGo(t, "", subSchema.Properties["boolean"].Format)
+	test.EqualsJSON(t, true, subSchema.Properties["boolean"].Example)
 
 	test.NotNil(t, subSchema.Properties["float"])
 	test.EqualsGo(t, "number", subSchema.Properties["float"].Type)
 	test.EqualsGo(t, "float64", subSchema.Properties["float"].Format)
+	test.EqualsJSON(t, "not float", subSchema.Properties["float"].Example)
 	test.NotNil(t, subSchema.Properties["int"])
 	test.EqualsGo(t, "number", subSchema.Properties["int"].Type)
 	test.EqualsGo(t, "int", subSchema.Properties["int"].Format)
+	test.EqualsJSON(t, "-1", subSchema.Properties["int"].Example)
 	test.NotNil(t, subSchema.Properties["int8"])
 	test.EqualsGo(t, "number", subSchema.Properties["int8"].Type)
 	test.EqualsGo(t, "int8", subSchema.Properties["int8"].Format)
+	test.EqualsJSON(t, "1", subSchema.Properties["int8"].Example)
 	test.NotNil(t, subSchema.Properties["uint64"])
 	test.EqualsGo(t, "number", subSchema.Properties["uint64"].Type)
 	test.EqualsGo(t, "uint64", subSchema.Properties["uint64"].Format)
+	test.EqualsJSON(t, "not int", subSchema.Properties["uint64"].Example)
 
 	test.NotNil(t, subSchema.Properties["bytes"])
 	test.EqualsGo(t, "string", subSchema.Properties["bytes"].Type)
 	test.EqualsGo(t, "byte", subSchema.Properties["bytes"].Format)
+	test.EqualsJSON(t, "123", subSchema.Properties["bytes"].Example)
 	test.NotNil(t, subSchema.Properties["timestamp"])
 	test.EqualsGo(t, "string", subSchema.Properties["timestamp"].Type)
 	test.EqualsGo(t, "date-time", subSchema.Properties["timestamp"].Format)
+	test.EqualsJSON(t, "2023-11-10T23:00:00Z", subSchema.Properties["timestamp"].Example)
 	test.NotNil(t, subSchema.Properties["custom"])
 	test.EqualsGo(t, "number", subSchema.Properties["custom"].Type)
 	test.EqualsGo(t, "openapi_test.CustomInt", subSchema.Properties["custom"].Format)
+	test.EqualsJSON(t, 2, subSchema.Properties["custom"].Example)
 	test.NotNil(t, subSchema.Properties["any"])
 	test.EqualsGo(t, "object", subSchema.Properties["any"].Type)
 	test.EqualsGo(t, "", subSchema.Properties["any"].Format)
+	test.EqualsJSON(t, enc.Map{"hello": enc.String("world")}, subSchema.Properties["any"].Example)
 	test.NotNil(t, subSchema.Properties["customEmptyIF"])
 	test.EqualsGo(t, "object", subSchema.Properties["customEmptyIF"].Type)
 	test.EqualsGo(t, "openapi_test.CustomEmptyInterface", subSchema.Properties["customEmptyIF"].Format)
+	test.EqualsJSON(t, enc.Map{"hello": enc.String("world")}, subSchema.Properties["customEmptyIF"].Example)
 	test.NotNil(t, subSchema.Properties["someInterface"])
 	test.EqualsGo(t, "object", subSchema.Properties["someInterface"].Type)
 	test.EqualsGo(t, "io.Reader", subSchema.Properties["someInterface"].Format)
+	test.EqualsJSON(t, "whatever", subSchema.Properties["someInterface"].Example)
 	test.NotNil(t, subSchema.Properties["raw"])
 	test.EqualsGo(t, "object", subSchema.Properties["raw"].Type)
 	test.EqualsGo(t, "", subSchema.Properties["raw"].Format)
+	test.EqualsJSON(t, enc.Map{"a": enc.String("b"), "c": enc.List{enc.Integer(1), enc.Integer(2), enc.Integer(3)}}, subSchema.Properties["raw"].Example)
 
 	test.NotNil(t, s.Components.SecurityScheme)
 	test.NotNil(t, s.Components.SecurityScheme["jwt"])
