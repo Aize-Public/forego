@@ -1,8 +1,9 @@
 package lists
 
 import (
-	"github.com/Aize-Public/forego/test"
 	"testing"
+
+	"github.com/Aize-Public/forego/test"
 )
 
 func TestSplit(t *testing.T) {
@@ -33,4 +34,9 @@ func TestSplit(t *testing.T) {
 		out := Copy(in)
 		test.EqualsJSON(t, [][]int{{1, 2, 3, 4, 5, 6}, {7, 8, 9, 10, 11, 12}}, Split(out, 6))
 	}
+}
+
+func TestFlatten(t *testing.T) {
+	out := Flatten([][]int{{1}, {2, 3}, {}})
+	test.EqualsJSON(t, `[1,2,3]`, out)
 }

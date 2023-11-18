@@ -1,10 +1,5 @@
 package lists
 
-import (
-	"fmt"
-	"strings"
-)
-
 /*
 Creates a permute generator which will permute *inplace*
 
@@ -105,6 +100,7 @@ func (this *permGen[T]) next() bool {
 	return true
 }
 
+/* only useful for debugging
 func (this *permGen[T]) String() string {
 	out := []string{}
 	for i := 0; i < len(this.elems); i++ {
@@ -116,3 +112,4 @@ func (this *permGen[T]) String() string {
 	}
 	return strings.Join(out, " ")
 }
+*/
