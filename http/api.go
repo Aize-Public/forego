@@ -41,7 +41,7 @@ func (s *Server) RegisterAPI(c ctx.C, obj Doable) error {
 
 		obj, err := handler.Recv(c, req)
 		if err != nil {
-			return nil, err
+			return nil, NewErrorf(c, 400, "%v", err) // receive errors are always 4xx (TODO how to handle 403?)
 		}
 		err = obj.Do(c)
 		if err != nil {

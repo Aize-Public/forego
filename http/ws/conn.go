@@ -30,7 +30,9 @@ func (this *Conn) Loop(c ctx.C) error {
 				log.Debugf(c, "inbox: EOF")
 				return
 			default:
-				log.Warnf(c, "inbox: %v", err)
+				if c.Err() == nil { // ignore cancels
+					log.Warnf(c, "inbox: %v", err)
+				}
 				return
 			case nil:
 				select {

@@ -83,7 +83,7 @@ func (this Server) Mux() *http.ServeMux {
 	return this.mux
 }
 
-func (this Server) Listen(c ctx.C, addr string) (net.Addr, error) {
+func (this Server) Listen(c ctx.C, addr string) (*net.TCPAddr, error) {
 	s := http.Server{
 		BaseContext: func(l net.Listener) context.Context {
 			return ctx.WithTag(c, "http.addr", l.Addr().String())
@@ -132,7 +132,7 @@ func (this Server) Listen(c ctx.C, addr string) (net.Addr, error) {
 	}()
 
 	// blocks until either an error, or the first Accept() call happen
-	return ln.Addr(), <-ch
+	return ln.Addr().(*net.TCPAddr), <-ch
 }
 
 // wrapper for a net listener

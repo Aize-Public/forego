@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"sync"
-	"time"
 
 	"github.com/Aize-Public/forego/ctx"
 	"github.com/Aize-Public/forego/ctx/log"
@@ -25,84 +24,6 @@ const ( // https://www.rfc-editor.org/rfc/rfc6455#section-7.4.1
 type impl interface {
 	enc.ReadWriter
 	Close(c ctx.C, reason int) error
-}
-
-type chanMsg struct {
-	Type int
-	Data enc.Node
-}
-
-type chanImpl struct {
-	Send chan<- chanMsg
-	Recv <-chan chanMsg
-}
-
-/*
-func newChanPipe(len int) (chanImpl, chanImpl) {
-	fwd := make(chan chanMsg, len)
-	bak := make(chan chanMsg, len)
-	return chanImpl{
-			Send: fwd,
-			Recv: bak,
-		}, chanImpl{
-			Send: bak,
-			Recv: fwd,
-		}
-}
-
-var _ impl = chanImpl{}
-*/
-
-func (this chanImpl) Write(c ctx.C, n enc.Node) error {
-	log.Debugf(c, "%p: sending %+v", this.Send, n)
-	select {
-	case <-c.Done():
-		return c.Err()
-	case this.Send <- chanMsg{
-		Type: websocket.TextFrame,
-		Data: n,
-	}:
-		return nil
-	}
-}
-
-func (this chanImpl) Read(c ctx.C) (enc.Node, error) {
-	select {
-	case <-c.Done():
-		return nil, c.Err()
-	case msg, ok := <-this.Recv:
-		if !ok {
-			return nil, ctx.NewErrorf(c, "ws.exit<closed>")
-		}
-		switch msg.Type {
-		case websocket.CloseFrame:
-			switch msg.Data {
-			case enc.Integer(EXIT):
-				return nil, io.EOF
-			default:
-				return nil, ctx.NewErrorf(c, "ws.exit<%v>", msg.Data)
-			}
-		case websocket.TextFrame:
-			return msg.Data, nil
-		default:
-			return nil, ctx.NewErrorf(c, "unexpected type: %v", msg)
-		}
-	}
-}
-
-func (this chanImpl) Close(c ctx.C, reason int) error {
-	time.Sleep(time.Millisecond)
-	log.Debugf(c, "%p: closing %+v", this.Send, reason)
-	select {
-	case <-c.Done():
-		return c.Err()
-	case this.Send <- chanMsg{
-		Type: websocket.CloseFrame,
-		Data: enc.Integer(reason),
-	}:
-		close(this.Send)
-		return nil
-	}
 }
 
 ///////////////////////////////////////////////

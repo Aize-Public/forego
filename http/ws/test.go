@@ -58,6 +58,7 @@ func (this *testWS) Write(c ctx.C, n enc.Node) error {
 	return h(c, f)
 }
 
+// create a local websocket loop and return a client connected to it
 func (this *Handler) NewTest(t *testing.T) TestClient {
 	ws := &testWS{
 		byChan: map[string]func(ctx.C, Frame) error{},

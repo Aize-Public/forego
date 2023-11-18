@@ -43,6 +43,10 @@ func (this Counter) Special(c C, req struct {
 	return nil
 }
 
+func (this Counter) Bye(c C) error {
+	return c.Close()
+}
+
 func (this *Counter) internal(c C) error { // nolint (meant to be unused)
 	return nil
 }
@@ -84,6 +88,10 @@ func TestReflect(t *testing.T) {
 	test.NoError(t, conn.onData(c, Frame{
 		Channel: "001",
 		Path:    "get",
+	}))
+	test.NoError(t, conn.onData(c, Frame{
+		Channel: "001",
+		Path:    "bye",
 	}))
 	test.NoError(t, conn.Close(c, 1000))
 
