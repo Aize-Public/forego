@@ -173,13 +173,16 @@ func Marshal(c ctx.C, in any) (Node, error) {
 }
 
 func (this Handler) Marshal(c ctx.C, in any) (Node, error) {
+	//log.Warnf(c, "OHA: %T %v", in, in)
 	switch in := in.(type) {
 	case nil:
 		return Nil{}, nil
-	case time.Time:
-		return String(in.Format(time.RFC3339Nano)), nil
 	case Marshaler:
+		//log.Warnf(c, "OHA: %T->MarshalNode", in)
 		return in.MarshalNode(c)
+	case time.Time:
+		return Time(in), nil
+		//return String(in.Format(time.RFC3339Nano)), nil
 	case json.Marshaler:
 		j, err := in.MarshalJSON()
 		if err != nil {
@@ -196,6 +199,8 @@ func (this Handler) Marshal(c ctx.C, in any) (Node, error) {
 	default:
 		log.Warnf(c, "possible wrong fallback for type %T", in)
 		return fromNative(in), nil
+	case reflect.Func:
+		return nil, ctx.NewErrorf(c, "can't marshal %T", in)
 	case reflect.Bool:
 		return Bool(v.Bool()), nil
 	case reflect.Float64, reflect.Float32:

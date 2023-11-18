@@ -20,7 +20,9 @@ func MustMarshalJSON(c ctx.C, from any) []byte {
 	if err != nil {
 		panic(err)
 	}
-	return JSON{}.Encode(c, n)
+	return JSON{
+		//Indent: true, // NOTE(oha): fixme
+	}.Encode(c, n)
 }
 
 func MarshalJSON(c ctx.C, from any) ([]byte, error) {

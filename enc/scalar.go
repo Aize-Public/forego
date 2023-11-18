@@ -37,6 +37,34 @@ func (this String) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) e
 	return nil
 }
 
+func (this String) AsTime() (Time, error) {
+	var t Time
+	return t, t.Parse(string(this))
+}
+
+func (this String) MustTime() Time {
+	var t Time
+	err := t.Parse(string(this))
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
+
+func (this String) AsDuration() (Duration, error) {
+	var d Duration
+	return d, d.Parse(string(this))
+}
+
+func (this String) MustDuration() Duration {
+	var d Duration
+	err := d.Parse(string(this))
+	if err != nil {
+		panic(err)
+	}
+	return d
+}
+
 type Bool bool
 
 var _ Node = Bool(true)

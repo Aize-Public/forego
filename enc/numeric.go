@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/Aize-Public/forego/ctx"
 )
@@ -13,6 +15,7 @@ type Numeric interface {
 	Int64() (int64, error)
 	Float64() (float64, error)
 	String() string
+	Duration(unit time.Duration) Duration
 }
 type numeric interface {
 	json.Marshaler
@@ -34,6 +37,9 @@ func (this Integer) MarshalJSON() ([]byte, error) { return json.Marshal(int64(th
 func (this Integer) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) error {
 	return unmarshalNumericInto(this, c, handler, into)
 }
+func (this Integer) Duration(unit time.Duration) Duration {
+	return Duration(time.Duration(this) * unit)
+}
 
 type Float float64
 
@@ -49,6 +55,9 @@ func (this Float) MarshalJSON() ([]byte, error) { return json.Marshal(float64(th
 func (this Float) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) error {
 	return unmarshalNumericInto(this, c, handler, into)
 }
+func (this Float) Duration(unit time.Duration) Duration {
+	return Duration(float64(this) * float64(unit))
+}
 
 type Digits string
 
@@ -61,6 +70,30 @@ func (this Digits) Int64() (int64, error) {
 func (this Digits) Float64() (float64, error) { return strconv.ParseFloat(string(this), 64) }
 func (this Digits) String() string            { return string(this) }
 func (this Digits) GoString() string          { return fmt.Sprintf("enc.Num{%q}", string(this)) }
+func (this Digits) MustFloat() Float {
+	f, err := strconv.ParseFloat(string(this), 64)
+	if err != nil {
+		panic(err)
+	}
+	return Float(f)
+}
+func (this Digits) MustInteger() Integer {
+	f, err := strconv.ParseInt(string(this), 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	return Integer(f)
+}
+func (this Digits) IsFloat() bool {
+	return strings.ContainsAny(string(this), ".eEgG")
+}
+func (this Digits) Duration(unit time.Duration) Duration {
+	if this.IsFloat() {
+		return this.MustFloat().Duration(unit)
+	} else {
+		return this.MustInteger().Duration(unit)
+	}
+}
 
 func (this Digits) native() any {
 	f, err := this.Float64() // builtin json convert to float64 when unmarshalling into any, we should do the same

@@ -58,6 +58,7 @@ func (this path) Parent() path {
 	return this
 }
 
+// convert json.Unmarshal(&any) to enc.Node
 func fromNative(in any) Node {
 	switch in := in.(type) {
 	case nil:

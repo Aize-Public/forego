@@ -31,6 +31,7 @@ func AsMap(c ctx.C, n Node) (Map, error) {
 	}
 }
 
+// NOTE(oha): not sure if we really need this, left around for now might either add test or remove later
 type Pipe struct {
 	remoteClose chan struct{}
 	Send        chan<- Node
