@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"fmt"
 	"io"
 	"testing"
 	"time"
@@ -12,7 +13,8 @@ import (
 )
 
 type Counter struct {
-	Ct int
+	MinAmt int
+	Ct     int
 }
 
 func (this *Counter) Init(c C, amt int) error {
@@ -24,6 +26,9 @@ func (this *Counter) Init(c C, amt int) error {
 // name: increment
 func (this *Counter) Inc(c C, amt int) error {
 	log.Warnf(c, "%p.Inc(%v)", this, amt)
+	if amt < this.MinAmt {
+		return c.Error(fmt.Sprintf("amt %d < %d", amt, this.MinAmt))
+	}
 	this.Ct += amt
 	return this.Get(c)
 }
@@ -58,7 +63,7 @@ func TestReflect(t *testing.T) {
 	var _ Frame
 	c := test.Context(t)
 	h := Handler{}
-	h.MustRegister(c, &Counter{})
+	h.MustRegister(c, &Counter{MinAmt: 1})
 
 	send := make(chan chanMsg, 10)
 	recv := make(chan chanMsg, 10)
@@ -83,6 +88,11 @@ func TestReflect(t *testing.T) {
 	test.NoError(t, conn.onData(c, Frame{
 		Channel: "001",
 		Path:    "inc",
+		Data:    enc.Integer(0),
+	}))
+	test.NoError(t, conn.onData(c, Frame{
+		Channel: "001",
+		Path:    "inc",
 		Data:    enc.Integer(3),
 	}))
 	test.NoError(t, conn.onData(c, Frame{
@@ -102,7 +112,7 @@ func TestReflect(t *testing.T) {
 			var f Frame
 			enc.MustUnmarshal(c, msg.Data, &f)
 			if f.Type == "error" {
-				test.Fail(t, "error: %+v", f.Data)
+				test.ContainsJSON(t, f.Data, "amt")
 			} else {
 				test.OK(t, "recv: %+v", f.Data)
 			}
