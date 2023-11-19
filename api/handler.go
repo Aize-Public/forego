@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"reflect"
 
+	"github.com/Aize-Public/forego/api/openapi"
 	"github.com/Aize-Public/forego/ctx"
 	"github.com/Aize-Public/forego/ctx/log"
 )
@@ -115,6 +116,69 @@ func (this *Handler[T]) Paths() []string {
 		out = append(out, url.Path)
 	}
 	return out
+}
+
+func (this *Handler[T]) UpdateOpenAPI(c ctx.C, o *openapi.Service) (*openapi.PathItem, error) {
+	in := &openapi.Schema{
+		Type:       "object",
+		Format:     this.typ.Name(),
+		Properties: map[string]*openapi.Schema{},
+	}
+	out := &openapi.Schema{
+		Type:       "object",
+		Format:     this.typ.Name(),
+		Properties: map[string]*openapi.Schema{},
+	}
+	for _, f := range this.in {
+		ft := this.typ.Field(f.i)
+		s, err := o.SchemaFromType(c, ft.Type, &ft.Tag)
+		if err != nil {
+			return nil, ctx.NewErrorf(c, "field[%q]: %w", f.tag.name, err)
+		}
+		in.Properties[f.tag.name] = s
+		if f.tag.required {
+			in.Required = append(in.Required, f.tag.name)
+		}
+	}
+	for _, f := range this.out {
+		ft := this.typ.Field(f.i)
+		s, err := o.SchemaFromType(c, ft.Type, &ft.Tag)
+		if err != nil {
+			return nil, ctx.NewErrorf(c, "field[%q]: %w", f.tag.name, err)
+		}
+		out.Properties[f.tag.name] = s
+	}
+
+	pi := &openapi.PathItem{
+		Summary: this.typ.PkgPath() + "." + this.typ.Name(),
+		RequestBody: &openapi.RequestBody{
+			Content: map[string]openapi.MediaType{
+				"application/json": {
+					Schema: in,
+				},
+			},
+		},
+		Responses: map[string]openapi.Response{
+			"200": {
+				Content: map[string]openapi.Content{
+					"application/json": {
+						Schema: out,
+					},
+				},
+			},
+		},
+	}
+	if this.auth != nil {
+		pi.SetJWT(this.auth.tag.required)
+	}
+
+	for _, url := range this.urls {
+		o.Paths[url.Path] = &openapi.Path{
+			Post: pi,
+		}
+	}
+	// NOTE(oha): should we add GET if len(this.in) == 0?
+	return pi, nil
 }
 
 func (this *Handler[T]) URLs() []*url.URL {

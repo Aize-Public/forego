@@ -12,8 +12,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/Aize-Public/forego/api/openapi"
 	"github.com/Aize-Public/forego/ctx"
 	"github.com/Aize-Public/forego/ctx/log"
+	"github.com/Aize-Public/forego/enc"
 	"github.com/Aize-Public/forego/shutdown"
 )
 
@@ -25,6 +27,8 @@ type Server struct {
 	OnResponse func(Stat)
 
 	ready int32
+
+	OpenAPI *openapi.Service
 }
 
 func (this *Server) SetReady(code int) {
@@ -44,6 +48,7 @@ func NewServer(c ctx.C) *Server {
 				Path:   r.Path,
 			}.observe(r.Elapsed)
 		},
+		OpenAPI: openapi.NewService("unnamed"),
 	}
 	this.h = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t0 := time.Now()
@@ -76,9 +81,24 @@ func NewServer(c ctx.C) *Server {
 	this.mux.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(int(atomic.LoadInt32(&this.ready)))
 	})
+
+	this.mux.HandleFunc("/openapi.json", func(w http.ResponseWriter, r *http.Request) {
+		c := r.Context()
+		n, err := enc.Marshal(c, this.OpenAPI)
+		if err != nil {
+			log.Errorf(c, "can't marshal openapi: %v", err)
+			w.WriteHeader(500)
+			return
+		}
+		_, err = w.Write(enc.JSON{Indent: true}.Encode(c, n))
+		if err != nil {
+			log.Warnf(c, "can't send openapi: %v", err)
+		}
+	})
 	return this
 }
 
+// deprecated use Handle and HandleFunc directly on Server
 func (this Server) Mux() *http.ServeMux {
 	return this.mux
 }
@@ -147,8 +167,39 @@ func (this *listener) Accept() (net.Conn, error) {
 	return this.Listener.Accept()
 }
 
-func (this *Server) HandleRequest(pattern string, f func(c ctx.C, in []byte, r *http.Request) ([]byte, error)) {
-	this.mux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
+// Setup the given request as JSON, and add it to `s.OpenAPI` for the given path as POST, returns the openapi.PathItem
+func (this *Server) HandleRequest(path string, f func(c ctx.C, in []byte, r *http.Request) ([]byte, error)) *openapi.PathItem {
+	this.handleRequest(path, f)
+	pi := &openapi.PathItem{
+		RequestBody: &openapi.RequestBody{
+			Content: map[string]openapi.MediaType{
+				"application/json": {
+					Schema: &openapi.Schema{
+						Type: "object", // we assume it's an object
+					},
+				},
+			},
+		},
+		Responses: map[string]openapi.Response{
+			"200": {
+				Content: map[string]openapi.Content{
+					"application/json": {
+						Schema: &openapi.Schema{
+							Type: "object",
+						},
+					},
+				},
+			},
+		},
+	}
+	this.OpenAPI.Paths[path] = &openapi.Path{
+		Post: pi,
+	}
+	return pi
+}
+
+func (this *Server) handleRequest(path string, f func(c ctx.C, in []byte, r *http.Request) ([]byte, error)) {
+	this.mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		c := r.Context()
 		out, err := func() ([]byte, error) {
 			var in []byte

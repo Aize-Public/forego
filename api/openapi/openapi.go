@@ -5,9 +5,11 @@ func NewService(title string) *Service {
 		OpenAPI: "3.0.0",
 		Paths:   map[string]*Path{},
 	}
+
 	out.Info.Title = title
 	out.Info.License.Name = "private"
 	out.Info.Version = "0.0"
+
 	out.Components.SecurityScheme = map[string]*SecurityScheme{
 		"jwt": {
 			Type:         "http",

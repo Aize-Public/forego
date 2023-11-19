@@ -40,7 +40,7 @@ func TestAPI(t *testing.T) {
 	c := test.Context(t)
 
 	s := http.NewServer(c)
-	err := s.RegisterAPI(c, &Inc{
+	_, err := s.RegisterAPI(c, &Inc{
 		State: map[string]int{},
 	})
 	test.NoError(t, err)

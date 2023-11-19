@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Aize-Public/forego/api"
+	"github.com/Aize-Public/forego/api/openapi"
 	"github.com/Aize-Public/forego/ctx"
 	"github.com/Aize-Public/forego/ctx/log"
 	"github.com/Aize-Public/forego/enc"
@@ -14,17 +15,18 @@ type Doable interface {
 	Do(ctx.C) error
 }
 
-func (s *Server) MustRegisterAPI(c ctx.C, obj Doable) {
-	err := s.RegisterAPI(c, obj)
+func (s *Server) MustRegisterAPI(c ctx.C, obj Doable) *openapi.PathItem {
+	pi, err := s.RegisterAPI(c, obj)
 	if err != nil {
 		panic(err)
 	}
+	return pi
 }
 
-func (s *Server) RegisterAPI(c ctx.C, obj Doable) error {
+func (s *Server) RegisterAPI(c ctx.C, obj Doable) (*openapi.PathItem, error) {
 	handler, err := api.NewServer(c, obj)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	f := func(c ctx.C, in []byte, r *http.Request) ([]byte, error) {
 		req := &api.JSON{}
@@ -61,12 +63,12 @@ func (s *Server) RegisterAPI(c ctx.C, obj Doable) error {
 
 	urls := handler.URLs()
 	if len(urls) == 0 {
-		return ctx.NewErrorf(c, "no URL to register for %T", obj)
+		return nil, ctx.NewErrorf(c, "no URL to register for %T", obj)
 	}
 
 	for _, u := range handler.URLs() {
 		log.Debugf(c, "registering to %q", u.Path)
-		s.HandleRequest(u.Path, f)
+		s.handleRequest(u.Path, f)
 	}
-	return nil
+	return handler.UpdateOpenAPI(c, s.OpenAPI)
 }

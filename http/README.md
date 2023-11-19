@@ -39,6 +39,7 @@ Creates a new server, it will internally setup several middleware which provide:
 * `ServeMux` (can be used with `s.Mux()`)
 * `/live` which always return 204 (OK No Content)
 * `/ready` which by default returns 204 (can be changed with `s.SetReady()`)
+* `/openapi.json` serialized from `s.OpenAPI`
 
 ### `Mux()`
 
@@ -61,17 +62,16 @@ Helper which create a handler for the given function, which:
 * otherwise set the response to `application/json` and send the data
 * optionally gzip if more than 16KB and request accepts gzip
 
+An entry is created in `s.OpenAPI` for the given path, and the `*openapi.PathInfo` is returned for further tweaking
+
 ### `Register(c, obj)` and `MustRegister(c, obj)`
 
 ```go
   err = s.Register(c, &MyApi)
 ```
 
-use the [api](../api/) library to parse the given object, and expose the API
+Uses the [api](../api/) library to parse the given object, and expose the API.
 
-## TODO
+It also update `s.OpenAPI` accordingly.
 
-### OpenAPI
-
-the `api` library not only parse the object into an API definition, but can also produce `OpenAPI` specifications. Server should expose them.
 

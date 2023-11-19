@@ -39,7 +39,7 @@ func TestWordFilter(t *testing.T) {
 
 func exampleWordFilter(c ctx.C) { // nolint
 	s := http.NewServer(c)
-	_ = s.RegisterAPI(c, &WordFilter{
+	_, _ = s.RegisterAPI(c, &WordFilter{
 		Blacklist: regexp.MustCompile(`(foo|bar)`), // this will be copied by ref for each request
 	})
 }
