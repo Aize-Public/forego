@@ -14,7 +14,48 @@ This likely requires multiple scans to the data, and/or writing convoluted code.
 Using an intermediate layer, which maps JSON to some intermediate types, allows for a single parsing of the `[]byte` data in.
 After that, using and managing the intermediate types is easier, and less computational intensive.
 
-Another way to look at it, the intermediate types can be used instead of `json.RawMessage`, making it easier to code and faster to execute.
+A positive side effect, is that we no longer use a generic `json.RawMessage` which is opaque, but instead we can use the 
+generic `enc.Node` (which can be type-switch-ed) or a specific one like `enc.Map` if we want a generic object, but not a primitive or an array. 
+
+One way to look at it is that you could use `any` or `map[string]any`, and they would work similarly, but having custom names help with
+readability, and also provide options for `enc.Pairs` which keeps the order of the entries, and `enc.Digit` which is arbitrary precision.
+
+```go
+type Frame struct {
+  Type string `json:"type"`
+  Data enc.Node `json:"data"` // generic payload, change based on Type
+}
+
+type Op struct {
+  Op string `json:"op"`
+  Args enc.Map `json:"args"` // pairs
+}
+
+func handle(n enc.Node) error {
+  var f Frame
+  err := enc.Unmarshal(c, n, &f)
+  if err != nil {
+    return err
+  }
+  switch f.Type {
+    case "error":
+      var emsg string
+      err := enc.Unmarshal(f.Data, &emsg) // unmarshal into a string
+      if err != nil {
+        return err
+      }
+      return errors.New(emsg) // we got an error
+
+    case "op":
+      var op Op
+      err := enc.Unmarshal(f.Data, &op) // unmarshal into Op
+      if err != nil {
+        return err
+      }
+      return op.Exec()
+  }
+}
+```
 
 
 ## Marshal vs Encode
@@ -56,17 +97,16 @@ if you want to delay the unmarshalling of the data, or you can use `enc.Map` to 
 
 ### `enc.Numeric` interface and `enc.Integer`, `enc.Float` and `enc.Digits`
 
-When decoding a `JSON number`, a `enc.Digits` is created, which preserve exactly the same data received.
+When decoding a `JSON number`, a `enc.Digits` is created, which preserve exactly the same data received (this means you can decide later
+if you want `float32`, or `int64`, or `uint16` and so on.
 
-if then further unmarshalled, then appropriate conversions will take place, based on the target type:
+If then further unmarshalled, then appropriate conversions will take place, based on the target type:
 
-If the target is `float`, `int` or `uint` (with any precision), then the digits are parsed accordingly or an error is generated
+* If the target is `float`, `int` or `uint` (with any precision), then the digits are parsed accordingly or an error is generated
 
-If the target is `any`, then a `float64` is used (to keep compatibility with `encoding/json`)
+* If the target is `any`, then a `float64` is used (to keep compatibility with `encoding/json`)
 
-When encoding, if the input is `int` or `uint` then `enc.Integer` is used.
-
-For `float` the `enc.Float` is used.
+When encoding, if the input is `int` or `uint` then `enc.Integer` is used; for `float` the `enc.Float` is used.
 
 
 ### `enc.String`
@@ -247,3 +287,4 @@ that blacklist might change per request, based on the user settings or permissio
 
 Another advantage of having access to the `ctx.C` is that you can properly use `ctx/log` and still retains tags which might contains
 information helpful for debugging
+
