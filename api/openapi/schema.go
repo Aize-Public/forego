@@ -182,22 +182,15 @@ func (this *Service) schemaFromType(c ctx.C, t reflect.Type, doc, example string
 		}, nil
 
 	case reflect.Struct:
-		// Create reference
-		structKey := tt.PkgPath() + "/" + tt.Name()
-		structKey = strings.ReplaceAll(structKey, "/", "_")
-		schema := &Schema{Reference: "#/components/schemas/" + structKey}
-
-		// Add definition if not exists (the same struct type should only be defined once)
-		if this.Components.Schemas == nil {
-			this.Components.Schemas = make(map[string]*Schema)
-		}
-		if _, exists := this.Components.Schemas[structKey]; !exists {
+		build := func(structKey string) (*Schema, error) {
 			structSchema := &Schema{
 				Type:       "object",
-				Format:     t.String(),
 				Properties: map[string]*Schema{},
 			}
-			this.Components.Schemas[structKey] = structSchema // adding it before recursion, to protect against infinite recursion
+			if structKey != "" {
+				structSchema.Format = t.String()
+				this.Components.Schemas[structKey] = structSchema // adding it before recursion, to protect against infinite recursion
+			}
 
 			for i := 0; i < tt.NumField(); i++ {
 				f := tt.Field(i)
@@ -211,7 +204,35 @@ func (this *Service) schemaFromType(c ctx.C, t reflect.Type, doc, example string
 				}
 				structSchema.Properties[name] = s
 			}
-			log.Infof(c, "added referenced struct schema %q: %+v", structKey, structSchema)
+			return structSchema, nil
+		}
+
+		// Anonymous structs are expanded in place
+		if tt.PkgPath() == "" || tt.Name() == "" {
+			schema, err := build("")
+			if err != nil {
+				return nil, err
+			}
+			schema.Example = tryDecodingAsMap(c, example)
+			return schema, nil
+		}
+
+		// While named structs are referenced with "$ref"
+		// Create reference
+		structKey := tt.PkgPath() + "/" + tt.Name()
+		structKey = strings.ReplaceAll(structKey, "/", "_")
+		schema := &Schema{Reference: "#/components/schemas/" + structKey}
+
+		// Add definition if not exists (the same struct type should only be defined once)
+		if this.Components.Schemas == nil {
+			this.Components.Schemas = make(map[string]*Schema)
+		}
+		if _, exists := this.Components.Schemas[structKey]; !exists {
+			structSchema, err := build(structKey)
+			if err != nil {
+				return nil, err
+			}
+			log.Infof(c, "added referenced struct schema %q: %s", structKey, enc.MustMarshalJSON(c, structSchema))
 		}
 
 		// Using "allOf" as a workaround for not being able to add example/description to a $ref
