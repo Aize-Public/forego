@@ -153,18 +153,27 @@ func (this *Service) schemaFromType(c ctx.C, t reflect.Type, doc, example string
 
 	case reflect.Array, reflect.Slice:
 		elemSchema, err := this.schemaFromType(c, tt.Elem(), "", "")
+		format := t.String()
+		if elemSchema != nil && elemSchema.Format != "" {
+			format = "[]" + elemSchema.Format
+		}
 		return &Schema{
 			Type:    "array",
-			Format:  t.String(),
+			Format:  format,
 			Items:   elemSchema,
 			Example: tryDecodingAsList(c, example),
 		}, err
 
 	case reflect.Map:
 		elemSchema, err := this.schemaFromType(c, tt.Elem(), "", "")
+		format := t.String()
+		if elemSchema != nil && elemSchema.Format != "" {
+			format = strings.Split(format, "]")[0] + "]"
+			format += elemSchema.Format
+		}
 		return &Schema{
 			Type:            "object",
-			Format:          t.String(),
+			Format:          format,
 			AdditionalProps: elemSchema,
 			Example:         tryDecodingAsMap(c, example),
 		}, err
@@ -192,17 +201,22 @@ func (this *Service) schemaFromType(c ctx.C, t reflect.Type, doc, example string
 				this.Components.Schemas[structKey] = structSchema // adding it before recursion, to protect against infinite recursion
 			}
 
+			var fields []string
 			for i := 0; i < tt.NumField(); i++ {
 				f := tt.Field(i)
 				s, err := this.schemaFromType(c, f.Type, f.Tag.Get("doc"), strings.TrimSpace(f.Tag.Get("example")))
 				if err != nil {
-					return &Schema{}, err
+					return structSchema, err
 				}
 				name, _, _ := strings.Cut(f.Tag.Get("json"), ",")
 				if name == "" {
 					name = f.Name
 				}
 				structSchema.Properties[name] = s
+				fields = append(fields, name+" "+f.Type.String())
+			}
+			if structKey == "" {
+				structSchema.Format = "{" + strings.Join(fields, ", ") + "}" // prettier format for anonymous structs
 			}
 			return structSchema, nil
 		}
