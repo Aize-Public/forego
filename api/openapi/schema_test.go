@@ -32,6 +32,15 @@ type Sub struct {
 	CustomEmptyIF CustomEmptyInterface `json:"customEmptyIF" example:"{\"hello\":\"world\"}"`
 	SomeInterface io.Reader            `json:"someInterface" example:"whatever"`
 	Raw           json.RawMessage      `json:"raw" example:"{\"a\": \"b\", \"c\": [1, 2, 3]}"`
+
+	Anon struct {
+		Value string `json:"value" example:"v"`
+	} `json:"anon" example:"{\"value\": \"v\"}"`
+	MapAnon map[string]struct {
+		Value string `json:"value" example:"v"`
+	} `json:"mapAnon" example:"{\"a\": {\"value\": \"a\"}, \"b\": {\"value\": \"b\"}}"`
+
+	Loop *Obj `json:"loop"` // tests for infinite recursion
 }
 
 type CustomInt struct {
@@ -50,9 +59,9 @@ func TestSchema(t *testing.T) {
 	s := openapi.NewService("test-schema")
 	sc, err := s.SchemaFromType(c, reflect.TypeOf(Obj{}), nil)
 	test.NoError(t, err)
-	t.Logf("Schema: %+v", sc)
+	t.Logf("Schema: %s", enc.JSON{Indent: true}.Encode(c, enc.MustMarshal(c, sc)))
 	test.EqualsGo(t, "#/components/schemas/github.com_Aize-Public_forego_api_openapi_test_Obj", sc.AllOf[0].Reference)
-	t.Logf("Components.Schemas: %+v", s.Components.Schemas)
+	t.Logf("Components.Schemas: %s", enc.JSON{Indent: true}.Encode(c, enc.MustMarshal(c, s.Components.Schemas)))
 
 	objSchema := s.Components.Schemas["github.com_Aize-Public_forego_api_openapi_test_Obj"]
 	subSchema := s.Components.Schemas["github.com_Aize-Public_forego_api_openapi_test_Sub"]
@@ -134,6 +143,25 @@ func TestSchema(t *testing.T) {
 	test.EqualsGo(t, "object", subSchema.Properties["raw"].Type)
 	test.EqualsGo(t, "", subSchema.Properties["raw"].Format)
 	test.EqualsJSON(t, enc.Map{"a": enc.String("b"), "c": enc.List{enc.Integer(1), enc.Integer(2), enc.Integer(3)}}, subSchema.Properties["raw"].Example)
+
+	verifyAnonymous := func(name string, schema *openapi.Schema) {
+		t.Logf("Anonymous schema %q", name)
+		test.NotNil(t, schema)
+		test.EqualsGo(t, "object", schema.Type)
+		test.EqualsGo(t, "", schema.Format)
+		test.NotNil(t, schema.Properties["value"])
+		test.EqualsGo(t, "string", schema.Properties["value"].Type)
+		test.EqualsJSON(t, "v", schema.Properties["value"].Example)
+	}
+	verifyAnonymous("anon", subSchema.Properties["anon"])
+	test.EqualsJSON(t, enc.Map{"value": enc.String("v")}, subSchema.Properties["anon"].Example)
+	test.NotNil(t, subSchema.Properties["mapAnon"])
+	test.EqualsGo(t, "object", subSchema.Properties["mapAnon"].Type)
+	test.EqualsJSON(t, enc.Map{
+		"a": enc.Map{"value": enc.String("a")},
+		"b": enc.Map{"value": enc.String("b")}},
+		subSchema.Properties["mapAnon"].Example)
+	verifyAnonymous("mapAnon", subSchema.Properties["mapAnon"].AdditionalProps)
 
 	test.NotNil(t, s.Components.SecurityScheme)
 	test.NotNil(t, s.Components.SecurityScheme["jwt"])
