@@ -64,10 +64,10 @@ Helper which create a handler for the given function, which:
 
 An entry is created in `s.OpenAPI` for the given path, and the `*openapi.PathInfo` is returned for further tweaking
 
-### `Register(c, obj)` and `MustRegister(c, obj)`
+### `RegisterAPI(c, obj)` and `MustRegisterAPI(c, obj)`
 
 ```go
-  err = s.Register(c, &MyApi)
+  err = s.RegisterAPI(c, &MyApi)
 ```
 
 Uses the [api](../api/) library to parse the given object, and expose the API.
