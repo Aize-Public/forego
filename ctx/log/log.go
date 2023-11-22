@@ -20,21 +20,16 @@ type Line struct {
 
 type Tags map[string]ctx.JSON
 
+type Loggable interface {
+	LogAs(*Tags) any
+}
+
 func (this Line) JSON() string {
 	j, err := json.Marshal(this)
 	if err != nil {
 		panic(err)
 	}
 	return string(j)
-}
-
-func tags(c ctx.C) map[string]ctx.JSON {
-	out := map[string]ctx.JSON{}
-	_ = ctx.RangeTag(c, func(k string, j ctx.JSON) error {
-		out[k] = j
-		return nil
-	})
-	return out
 }
 
 type loggerKey struct {
@@ -55,18 +50,18 @@ func WithLoggerAndHelper(c ctx.C, logger func(Line), helper func()) ctx.C {
 	return context.WithValue(c, loggerKey{}, loggerValue{helper, logger})
 }
 
-var defLogger = func(at Line) {
+var defaultLogger = func(at Line) {
 	j, _ := json.Marshal(at)
 	_, _ = fmt.Printf("%s\n", j)
 }
 
 func getLogger(c ctx.C) loggerValue {
 	if c == nil {
-		return loggerValue{func() {}, defLogger}
+		return loggerValue{func() {}, defaultLogger}
 	}
 	logger, ok := c.Value(loggerKey{}).(loggerValue)
 	if !ok {
-		return loggerValue{func() {}, defLogger}
+		return loggerValue{func() {}, defaultLogger}
 	}
 	return logger
 }
@@ -119,17 +114,17 @@ func (at Line) formatf(c ctx.C, f string, args ...any) Line {
 		at.Time = time.Now()
 	}
 	at.Tags = tags(c)
-LOOP:
+
+	errs := []map[string]any{}
 	for i := 0; i < len(args); i++ {
 		switch arg := args[i].(type) {
 		case Loggable:
 			// if it implements Loggable, replace it with the return value and allow manipulation of tags
 			args[i] = arg.LogAs(&at.Tags)
+
 		case error:
-			// since errors can be wrapped, we need to unrwap them into ctx.Error to find the stack trace
-			m := map[string]any{
-				"error": arg.Error(),
-			}
+			// since errors can be wrapped, we need to unwrap them into ctx.Error to find the stack trace
+			m := map[string]any{"error": arg.Error()}
 			var err ctx.Error
 			if errors.As(arg, &err) {
 				m["stack"] = err.Stack
@@ -137,14 +132,24 @@ LOOP:
 					m["tags"] = tags(err.C)
 				}
 			}
-			at.Tags["error"], _ = json.Marshal(m)
-			break LOOP
+			errs = append(errs, m)
 		}
+	}
+
+	if len(errs) == 1 {
+		at.Tags["error"], _ = json.Marshal(errs[0])
+	} else if len(errs) > 1 {
+		at.Tags["error"], _ = json.Marshal(errs)
 	}
 	at.Message = fmt.Sprintf(f, args...)
 	return at
 }
 
-type Loggable interface {
-	LogAs(*Tags) any
+func tags(c ctx.C) Tags {
+	out := Tags{}
+	_ = ctx.RangeTag(c, func(k string, j ctx.JSON) error {
+		out[k] = j
+		return nil
+	})
+	return out
 }
