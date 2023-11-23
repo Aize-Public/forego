@@ -25,13 +25,17 @@ func WrapError(c C, err error) error {
 
 // a generic error which contains the stack trace
 type Error struct {
-	error
-	Stack []string
-	C     C
+	Err   error    `json:"err"`
+	Stack []string `json:"stack"`
+	C     C        `json:"ctx"`
+}
+
+func (err Error) Error() string {
+	return err.Err.Error()
 }
 
 func (err Error) Unwrap() error {
-	return err.error
+	return err.Err
 }
 
 func (this Error) Is(err error) bool {
@@ -39,7 +43,7 @@ func (this Error) Is(err error) bool {
 	case *Error, Error:
 		return true
 	default:
-		return errors.Is(this.error, err)
+		return errors.Is(this.Err, err)
 	}
 }
 
@@ -51,7 +55,7 @@ func maybeWrap(c C, err error) error {
 		return err // already wrapped
 	}
 	return Error{
-		error: err,
+		Err:   err,
 		Stack: stack(2, 100),
 		C:     c,
 	}
