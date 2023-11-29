@@ -183,6 +183,10 @@ func (this Handler) Marshal(c ctx.C, in any) (Node, error) {
 	case time.Time:
 		return Time(in), nil
 		//return String(in.Format(time.RFC3339Nano)), nil
+	case ctx.Error:
+		return String(in.Error()), nil
+	case *ctx.Error:
+		return String(in.Error()), nil
 	case json.Marshaler:
 		j, err := in.MarshalJSON()
 		if err != nil {
