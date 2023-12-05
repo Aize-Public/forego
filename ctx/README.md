@@ -1,6 +1,6 @@
 # `ctx`
 
-We expand from `context.Context` with few features and quality of life:
+We expand from `context.Context` with a few features and quality of life:
 * mostly we assume we always want a `ctx.C` everywhere: because tracing, span, tags, loggers, etc
 * contexts are not just for cancel, they can store environment, configuration and setting and overrides on each requests
 
@@ -11,21 +11,29 @@ Just cosmetic, I find the traditional way distracting, especially when used ever
 
 ## Tags and `ctx/log`
 
-Each context has a bag of tags, which can added along the way. Those will be printed in each log messages, which make it particularly useful for
+Each context has a bag of tags, which can added along the way. Those will be printed in each log message, which make them particularly useful for
 things like `CorrelationID`, `auth` or any context which will help debugging from a log message.
 
 It also make it coherent when using other libraries, since they will still carry over the context.
 
-All logging is `JSONL`, e.g.:
+By default, all logging is `JSONL`, e.g.:
 
 ```
 {"level":"debug","src":"github.com/Aize-Public/forego/http/server.go:83","time":"2023-06-01T07:18:31.007411033+02:00","message":"listening to :8080","tags":{"service":"viewer"}}
 ```
 
-May be wise to use a log viewer like `https://github.com/ohait/jl`   
+It may be wise to use a log viewer like `https://github.com/ohait/jl`
+
+Alternatively, you can add your own `slog.Logger` to the context, and that one will be used instead (also in other forego libraries):
+
+```go
+myLogger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+c = log.WithLogger(c, myLogger)
+log.Infof(c, "Hello world") // this will then be handled by myLogger, which in this example means it will be printed as a slog default JSON to stdout
+```
 
 
-## `ctx.Err`
+## `ctx.Error`
 
 ```go
   return ctx.NewErrorf(c, "my error wrapping %w", err)
@@ -33,7 +41,7 @@ May be wise to use a log viewer like `https://github.com/ohait/jl`
 
 Having a wrapping error that provide a stack trace has proven formidable when debugging or operating.
 
-When the logger find a `ctx.Err` as an argument (or anything wrapping it) it will print the stack trace as part of the error message.
+When the logger find a `ctx.Error` as an argument (or anything wrapping it), it will add a stack trace to the "error" tag.
 
 
 ## Caveats

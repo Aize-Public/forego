@@ -1,6 +1,7 @@
 package log_test
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/Aize-Public/forego/ctx/log"
@@ -9,12 +10,10 @@ import (
 
 func TestRedacted(t *testing.T) {
 	c := test.Context(t)
-	var lines []log.Line
-	k := log.WithLogger(c, func(line log.Line) {
-		lines = append(lines, line)
-	})
+	buf := &bytes.Buffer{}
+	c = log.WithLogger(c, log.NewDefaultLogger(buf))
 	s := log.RedactedString("foo")
-	log.Debugf(k, "redacted %s string", s)
-	test.Assert(t, len(lines) == 1)
-	test.NotContainsJSON(t, lines[0], "foo")
+	log.Debugf(c, "redacted %s string", s)
+	test.NotContainsJSON(t, buf.String(), "foo")
+	test.ContainsJSON(t, buf.String(), "***")
 }
