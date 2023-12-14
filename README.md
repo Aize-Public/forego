@@ -12,8 +12,8 @@ Some subfolders have a README with more details:
 * [http](./http/)
 * [http/ws](./http/ws/)
 * [shutdown](./shutdown/)
+* [test](./test/)
 * [utils/prom](./utils/prom/)
-
 
 
 ## `test`
