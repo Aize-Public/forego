@@ -54,7 +54,7 @@ func (res res) assignment(above, argNum int) res { // nolint:unused
 }
 
 func (res res) prefix(f string, args ...any) res {
-	res.msg = fmt.Sprintf(f, args...) + ": " + res.msg
+	res.msg = fmt.Sprintf(f, args...) + " ⮕  " + res.msg
 	return res
 }
 
@@ -64,7 +64,7 @@ func (res res) true(t *testing.T) {
 	if res.succeed {
 		OK(t, "%s", res.msg)
 	} else {
-		Fail(t, "FAIL %s", res.msg)
+		Fail(t, "%s", res.msg)
 	}
 }
 
@@ -101,6 +101,8 @@ func (this stringy) String() string {
 		return fmt.Sprintf("%#v", v)
 	}
 }
+
+func NoQuote(s string) string { return s }
 
 func Quote(s string) string {
 	r := strings.NewReplacer(

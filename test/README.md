@@ -1,12 +1,11 @@
 # `forego/test`
 
-Parses the source of the test to generate helpful test logs:
+Very similar to any other test libraries, but parses the original test source code to generate helpful log messages:
 
 ```go
 func TestReadme(t *testing.T) {
 	err := foo()
 	test.NoError(t, err)
-
 	test.EqualsGo(t, 2*2, add(2, 2))
 	test.EqualsGo(t, 2*2, add(2, 3))
 }
@@ -16,12 +15,12 @@ func add(a, b int) int { return a + b }
 
 Output:
 ```
-    readme_test.go:13:   ✔ no error: `foo()`
-    readme_test.go:16:   ✔ `2*2` == `add(2, 2)`: 4
-    readme_test.go:17: ❌  FAIL `2*2` == `add(2, 3)`: `4` != `5`
+    readme_test.go:17:   ✔ no error: `foo()`
+    readme_test.go:19:   ✔ EqualsGo(2*2, add(2, 2)) ⮕  4
+    readme_test.go:20: ❌  EqualsGo(2*2, add(2, 3)) ⮕  4 != 5
 ```
 
-as opposed to testify:
+As opposed to testify:
 
 ```go
 func TestReadme(t *testing.T) {
@@ -45,7 +44,7 @@ Output:
         	Test:       	TestIfy
 ```
 
-Which does not provide any log for success, and require a log message on each test to be easy to read
+Which does not provide any log for success, and wants an extra argument on each test to be easy to read.
 
 
 ## Functions
@@ -85,7 +84,7 @@ The simplest test, will log the argument source of the condition
   test.Nil(t, (*int)(nil)) // check if nil, even if it has a type
 ```
 
-Note: go does not consider `(*int)(nil)` as nil, while test.Nil() does
+Note: go does not consider `(*int)(nil)` as nil, but this does
 
 
 ### `Empty()` and `NotEmpty()`
@@ -95,7 +94,7 @@ Similar to `Nil()`, but has special meaning based on the type:
 * pointer: check if nil
 * slice, map, chan: check if len() == 0
 * string: check if ""
-* struct: check if it is zero
+* struct: check if it is the zero value
 
 
 ### `Error()` and `NoError()`
