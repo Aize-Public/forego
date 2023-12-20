@@ -10,7 +10,6 @@ import (
 
 	"github.com/Aize-Public/forego/ctx"
 	"github.com/Aize-Public/forego/ctx/log"
-	"github.com/Aize-Public/forego/ctx/oldlog"
 	"github.com/Aize-Public/forego/enc"
 	"github.com/Aize-Public/forego/test"
 )
@@ -172,19 +171,5 @@ func BenchmarkLogger(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		log.Debugf(c, "Benching logger [%d]", i)
-	}
-}
-
-func BenchmarkOldLogger(b *testing.B) {
-	c, cf := ctx.Background()
-	defer cf(nil)
-
-	c = ctx.WithTag(c, "a", "string")
-	c = ctx.WithTag(c, "b", 42)
-	c = ctx.WithTag(c, "c", map[string]bool{"1": true, "2": true, "3": false})
-	c = ctx.WithTag(c, "d", []int{1, 2, 3})
-
-	for i := 0; i < b.N; i++ {
-		oldlog.Debugf(c, "Benching old logger [%d]", i)
 	}
 }
