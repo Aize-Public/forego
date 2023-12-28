@@ -7,7 +7,15 @@ import (
 
 	"github.com/Aize-Public/forego/ctx"
 	"github.com/Aize-Public/forego/ctx/log"
+	"github.com/Aize-Public/forego/utils/prom"
 )
+
+func (this *Server) SetupPrometheus(c ctx.C, path string) {
+	if path == "" {
+		path = "/metrics"
+	}
+	this.mux.Handle(path, prom.Handler())
+}
 
 // register /pprof/ and /goroutines under the given prefix
 func (this *Server) SetupMonitoring(c ctx.C, prefix string) {

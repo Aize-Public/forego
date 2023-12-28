@@ -11,13 +11,8 @@ import (
 
 func TestServer(t *testing.T) {
 	c := test.Context(t)
-	var stats []http.Stat
 
 	s := http.NewServer(c)
-	s.OnResponse = func(r http.Stat) {
-		t.Logf("stats: %+v", r)
-		stats = append(stats, r)
-	}
 	s.Mux().HandleFunc("/test/one", func(w gohttp.ResponseWriter, r *gohttp.Request) {
 		_, _ = w.Write([]byte(`"one"`))
 	})
@@ -28,6 +23,4 @@ func TestServer(t *testing.T) {
 	res, err := http.DefaultClient.Post(c, "http://"+addr.String()+"/test/one", []byte(`[]`))
 	test.NoError(t, err)
 	test.ContainsJSON(t, "one", string(res))
-
-	test.Assert(t, len(stats) == 1)
 }

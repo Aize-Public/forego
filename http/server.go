@@ -24,7 +24,7 @@ type Server struct {
 	h   http.Handler
 
 	// called when a request is done, by default it logs and generate metrics
-	OnResponse func(Stat)
+	//OnResponse func(Stat)
 
 	ready int32
 
@@ -38,16 +38,7 @@ func (this *Server) SetReady(code int) {
 
 func NewServer(c ctx.C) *Server {
 	this := &Server{
-		mux: http.NewServeMux(),
-		OnResponse: func(r Stat) {
-			log.Infof(c, "%s %d in %v", r.Path, r.Code, r.Elapsed)
-			// TODO(oha): move this out, so it won't be overridden
-			metric{
-				Method: r.Method,
-				Code:   r.Code,
-				Path:   r.Path,
-			}.observe(r.Elapsed)
-		},
+		mux:     http.NewServeMux(),
 		OpenAPI: openapi.NewService("unnamed"),
 	}
 	this.h = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -64,13 +55,12 @@ func NewServer(c ctx.C) *Server {
 		default:
 			this.mux.ServeHTTP(w2, r.WithContext(c))
 		}
-		this.OnResponse(Stat{
-			Method:  r.Method,
-			Path:    r.URL.Path,
-			UA:      r.UserAgent(),
-			Code:    w2.code,
-			Elapsed: time.Since(t0),
-		})
+
+		metric{
+			Method: r.Method,
+			Code:   w2.code,
+			Path:   r.URL.Path, // TODO(oha) if we have templates, this won't work
+		}.observe(time.Since(t0))
 	})
 
 	this.mux.HandleFunc("/live", func(w http.ResponseWriter, r *http.Request) {

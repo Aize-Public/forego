@@ -1,16 +1,6 @@
 package http
 
-import (
-	"bufio"
-	"net"
-	"net/http"
-	"strings"
-	"time"
-
-	"github.com/Aize-Public/forego/ctx/log"
-	"github.com/Aize-Public/forego/utils"
-)
-
+/*
 type Stat struct {
 	Method  string
 	Path    string
@@ -18,6 +8,7 @@ type Stat struct {
 	Code    int
 	Elapsed time.Duration
 }
+*/
 
 /*
 func defaultMiddleware(h http.Handler, f func(s Stat)) http.Handler {
@@ -42,36 +33,3 @@ func defaultMiddleware(h http.Handler, f func(s Stat)) http.Handler {
 	})
 }
 */
-
-type response struct {
-	http.ResponseWriter
-	code int
-}
-
-type responseHijacker struct {
-	*response
-	hijacker http.Hijacker
-}
-
-var _ http.Hijacker = &responseHijacker{}
-
-func (r *response) WriteHeader(code int) {
-	if r.code != 0 {
-		stack := utils.Stack(1, 10)
-		log.Warnf(nil, "duplicate WriteHeader() at %s", strings.Join(stack, "\n"))
-		return
-	}
-	r.code = code
-	r.ResponseWriter.WriteHeader(code)
-}
-
-func (r *response) Write(b []byte) (int, error) {
-	if r.code == 0 {
-		r.code = 200
-	}
-	return r.ResponseWriter.Write(b)
-}
-
-func (r responseHijacker) Hijack() (conn net.Conn, rw *bufio.ReadWriter, err error) {
-	return r.hijacker.Hijack()
-}
