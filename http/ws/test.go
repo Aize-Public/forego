@@ -106,3 +106,25 @@ func (this *TestClient) Open(c ctx.C, path string, data any, onData func(ctx.C, 
 			Data:    enc.MustMarshal(c, data),
 		})
 }
+
+// experimental
+// open a channel, and return a ws.C for that channel and a inbox where all the responses will be added to
+func (this *TestClient) NewContext(c ctx.C, size int) (C, <-chan Frame) {
+	outbox := make(chan Frame, size)
+	ch := Channel{
+		Conn: this.conn,
+		ID:   uuid.NewString(),
+	}
+	this.ws.byChan[ch.ID] = func(c ctx.C, f Frame) error {
+		select {
+		case outbox <- f:
+			return nil
+		case <-c.Done():
+			return c.Err()
+		}
+	}
+	return C{
+		C:  c,
+		ch: &ch,
+	}, outbox
+}
