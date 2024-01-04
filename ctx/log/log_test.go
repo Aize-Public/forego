@@ -2,7 +2,9 @@ package log_test
 
 import (
 	"bytes"
+	"fmt"
 	"io"
+	"log/slog"
 	"runtime"
 	"strings"
 	"testing"
@@ -50,21 +52,29 @@ func TestLogger(t *testing.T) {
 	buf := &bytes.Buffer{}
 	c = log.WithLogger(c, log.NewDefaultLogger(buf))
 
-	verify := func(c ctx.C, expectedLevel, expectedMsg string) expectedLogStruct {
+	verify := func(c ctx.C, expectedLevel, expectedMsg string, emptySrc bool) expectedLogStruct {
 		t.Helper()
 		defer buf.Reset()
 		t.Logf("TESTING JSON LOG LINE: %s", buf.String())
 
 		var m map[string]any
 		test.NoError(t, enc.UnmarshalJSON(c, buf.Bytes(), &m))
-		test.EqualsGo(t, 5, len(m)) // check for unexpected fields
+		if emptySrc {
+			test.EqualsGo(t, 4, len(m)) // check for unexpected fields
+		} else {
+			test.EqualsGo(t, 5, len(m)) // check for unexpected fields
+		}
 		var l expectedLogStruct
 		test.NoError(t, enc.UnmarshalJSON(c, buf.Bytes(), &l))
 
+		if emptySrc {
+			test.Empty(t, l.Src)
+		} else {
+			test.NotEmpty(t, l.Src)
+			_, filepath, _, _ := runtime.Caller(1)
+			test.Assert(t, strings.HasPrefix(string(l.Src), filepath))
+		}
 		test.EqualsGo(t, expectedLevel, l.Level)
-		test.NotEmpty(t, l.Src)
-		_, filepath, _, _ := runtime.Caller(1)
-		test.Assert(t, strings.HasPrefix(string(l.Src), filepath))
 		test.EqualsGo(t, expectedMsg, l.Msg)
 		test.NotEmpty(t, l.Time)
 		tΔ := time.Since(l.Time)
@@ -75,28 +85,39 @@ func TestLogger(t *testing.T) {
 
 	{
 		log.Debugf(c, "Testing testing %d", 123)
-		l := verify(c, "debug", "Testing testing 123")
+		l := verify(c, "debug", "Testing testing 123", false)
 		test.EqualsJSON(t, expectedTags, l.Tags)
 	}
 	{
 		log.Infof(c, "Testing testing %d", 123)
-		l := verify(c, "info", "Testing testing 123")
+		l := verify(c, "info", "Testing testing 123", false)
 		test.EqualsJSON(t, expectedTags, l.Tags)
 	}
 	{
 		log.Warnf(c, "Testing testing %d", 123)
-		l := verify(c, "warn", "Testing testing 123")
+		l := verify(c, "warn", "Testing testing 123", false)
 		test.EqualsJSON(t, expectedTags, l.Tags)
 	}
 	{
 		log.Errorf(c, "Testing testing %d%s%d", 1, "2", 3)
-		l := verify(c, "error", "Testing testing 123")
+		l := verify(c, "error", "Testing testing 123", false)
+		test.EqualsJSON(t, expectedTags, l.Tags)
+	}
+	{
+		_, filepath, line, _ := runtime.Caller(0)
+		log.Customf(c, slog.LevelDebug, fmt.Sprintf("%s:%d", filepath, line), "Testing testing %d", 123)
+		l := verify(c, "debug", "Testing testing 123", false)
+		test.EqualsJSON(t, expectedTags, l.Tags)
+	}
+	{ // Custom log level and no src
+		log.Customf(c, slog.Level(int(slog.LevelError)+42), "", "Testing testing %d", 123)
+		l := verify(c, "error+42", "Testing testing 123", true)
 		test.EqualsJSON(t, expectedTags, l.Tags)
 	}
 	{ // Single wrapped error
 		mockErr := ctx.WrapError(c, io.EOF)
 		log.Errorf(c, "Testing error: %v", mockErr)
-		l := verify(c, "error", "Testing error: EOF")
+		l := verify(c, "error", "Testing error: EOF", false)
 		test.NotEmpty(t, l.Tags["error"])
 
 		var errs []map[string]any
@@ -110,7 +131,7 @@ func TestLogger(t *testing.T) {
 	{ // Multiple wrapped errors
 		mockErr := ctx.WrapError(c, io.EOF)
 		log.Errorf(c, "Testing error: err1=%v %v", mockErr, ctx.NewErrorf(c, "err2=%w", mockErr))
-		l := verify(c, "error", "Testing error: err1=EOF err2=EOF")
+		l := verify(c, "error", "Testing error: err1=EOF err2=EOF", false)
 		test.NotEmpty(t, l.Tags["error"])
 
 		var errs []map[string]any
@@ -128,7 +149,7 @@ func TestLogger(t *testing.T) {
 	{ // Loggable with no rewrite of tags
 		arg := loggableArg{value: "Loggable arg", replaceTags: log.Tags{}}
 		log.Infof(c, "Testing loggable: %v", arg)
-		l := verify(c, "info", "Testing loggable: Loggable arg")
+		l := verify(c, "info", "Testing loggable: Loggable arg", false)
 		test.EqualsJSON(t, expectedTags, l.Tags)
 	}
 	{ // Loggable with rewrite of tags
@@ -139,7 +160,7 @@ func TestLogger(t *testing.T) {
 			"d": ctx.JSON(`{"1":"yes","2":"no","3":"maybe"}`),
 		}}
 		log.Infof(c, "Testing loggable: %v", arg)
-		l := verify(c, "info", "Testing loggable: Loggable arg")
+		l := verify(c, "info", "Testing loggable: Loggable arg", false)
 		modifiedTags := []byte(`{"a":42,"b":"b","c":["1","2","3"],"d":{"1":"yes","2":"no","3":"maybe"},"test":"TestLogger"}`)
 		test.EqualsJSON(t, modifiedTags, l.Tags)
 	}
@@ -154,7 +175,7 @@ func TestLogger(t *testing.T) {
 			"d": ctx.JSON(`3`),
 		}}
 		log.Infof(c, "Testing loggable: %v, %v, %v", arg1, arg2, arg3)
-		l := verify(c, "info", "Testing loggable: Arg1, Arg2, Arg3")
+		l := verify(c, "info", "Testing loggable: Arg1, Arg2, Arg3", false)
 		modifiedTags := []byte(`{"d":3,"a":"string","b":42,"c":{"1":true,"2":true,"3":false},"test":"TestLogger"}`)
 		test.EqualsJSON(t, modifiedTags, l.Tags)
 	}

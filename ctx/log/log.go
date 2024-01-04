@@ -92,30 +92,40 @@ func helper(c ctx.C) func() {
 
 func Errorf(c ctx.C, f string, args ...any) {
 	helper(c)()
-	doLog(c, slog.LevelError, f, args...)
+	doLog(c, slog.LevelError, caller(1), f, args...)
 }
 
 func Warnf(c ctx.C, f string, args ...any) {
 	helper(c)()
-	doLog(c, slog.LevelWarn, f, args...)
+	doLog(c, slog.LevelWarn, caller(1), f, args...)
 }
 
 func Infof(c ctx.C, f string, args ...any) {
 	helper(c)()
-	doLog(c, slog.LevelInfo, f, args...)
+	doLog(c, slog.LevelInfo, caller(1), f, args...)
 }
 
 func Debugf(c ctx.C, f string, args ...any) {
 	helper(c)()
-	doLog(c, slog.LevelDebug, f, args...)
+	doLog(c, slog.LevelDebug, caller(1), f, args...)
 }
 
-func doLog(c ctx.C, level slog.Level, f string, args ...any) {
+// Log with a custom log level and src. To drop the src Attr entirely, leave the string empty.
+func Customf(c ctx.C, level slog.Level, src, f string, args ...any) {
+	helper(c)()
+	doLog(c, level, src, f, args...)
+}
+
+func doLog(c ctx.C, level slog.Level, src, f string, args ...any) {
 	helper(c)()
 	l, _ := GetLogger(c)
 	tags := extractTags(c)
 	msg := formatMsg(c, &tags, f, args...)
-	l.LogAttrs(c, level, msg, slog.String("src", caller(2)), slog.Group("tags", tags.AsList()...))
+	if src != "" {
+		l.LogAttrs(c, level, msg, slog.String("src", src), slog.Group("tags", tags.AsList()...))
+	} else {
+		l.LogAttrs(c, level, msg, slog.Group("tags", tags.AsList()...))
+	}
 }
 
 func extractTags(c ctx.C) Tags {
