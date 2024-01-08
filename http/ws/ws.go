@@ -37,9 +37,11 @@ type wsImpl struct {
 var _ impl = &wsImpl{}
 
 func (this *wsImpl) Write(c ctx.C, n enc.Node) error {
+	j := enc.JSON{}.Encode(c, n)
 	this.m.Lock()
 	defer this.m.Unlock()
-	return this.write(c, enc.JSON{}.Encode(c, n))
+	log.Debugf(c, "ws.write: %s", j)
+	return this.write(c, j)
 }
 
 // note this is not safe for multiple go routines
@@ -55,7 +57,7 @@ func (this *wsImpl) write(c ctx.C, data []byte) error {
 	if ct != len(data) {
 		return ctx.NewErrorf(c, "can't write all data: %d < %d", ct, len(data))
 	}
-	log.Debugf(c, "ws sent: %s", data)
+	//log.Debugf(c, "ws sent: %s", data)
 	return nil
 }
 

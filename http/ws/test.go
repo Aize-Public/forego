@@ -2,12 +2,10 @@ package ws
 
 import (
 	"io"
-	"testing"
 
 	"github.com/Aize-Public/forego/ctx"
 	"github.com/Aize-Public/forego/ctx/log"
 	"github.com/Aize-Public/forego/enc"
-	"github.com/Aize-Public/forego/test"
 	"github.com/google/uuid"
 )
 
@@ -59,7 +57,7 @@ func (this *testWS) Write(c ctx.C, n enc.Node) error {
 }
 
 // create a local websocket loop and return a client connected to it
-func (this *Handler) NewTest(t *testing.T) TestClient {
+func (this *Handler) NewTest(c ctx.C) *TestClient {
 	ws := &testWS{
 		byChan: map[string]func(ctx.C, Frame) error{},
 		inbox:  make(chan Frame, 10),
@@ -68,9 +66,9 @@ func (this *Handler) NewTest(t *testing.T) TestClient {
 		h:  this,
 		ws: ws,
 	}
-	go conn.Loop(test.Context(t)) // nolint
+	go conn.Loop(c) // nolint
 
-	return TestClient{
+	return &TestClient{
 		conn: conn,
 		ws:   ws,
 	}
@@ -90,18 +88,52 @@ func (this *TestClient) Close(c ctx.C) error {
 	return this.conn.Close(c, 1000)
 }
 
-func (this *TestClient) Open(c ctx.C, path string, data any, onData func(ctx.C, Frame) error) (send func(ctx.C, string, any) error, err error) {
-	ch := uuid.NewString()
-	this.ws.byChan[ch] = onData
+// open a channel, and return a call function that will send the data to the given path, and block until
+// 1. the function finish with no error
+// 2. the function finish with an error
+// 3. the callback onData returns an error
+func (this *TestClient) Open(c ctx.C, path string, data any, onData func(ctx.C, Frame) error) (call func(ctx.C, string, any) error, err error) {
+	chID := uuid.NewString()
+	ech := make(chan error, 1)
+	this.ws.byChan[chID] = func(c ctx.C, f Frame) error {
+		switch f.Type {
+		case "return", "error":
+			var err error
+			if f.Data != nil {
+				err = ctx.NewErrorf(c, "remote: %s", f.Data)
+			}
+			select {
+			case ech <- err:
+			default:
+			}
+		}
+		err := onData(c, f)
+		if err != nil {
+			select {
+			case ech <- err:
+			default:
+			}
+		}
+		return nil
+	}
 	return func(c ctx.C, path string, data any) error {
-			return this.Send(c, Frame{
-				Channel: ch,
+			err := this.Send(c, Frame{
+				Channel: chID,
 				Path:    path,
 				Data:    enc.MustMarshal(c, data),
 			})
+			if err != nil {
+				return err
+			}
+			select {
+			case err := <-ech:
+				return err
+			case <-c.Done():
+				return c.Err()
+			}
 		}, this.Send(c, Frame{
 			Type:    "open",
-			Channel: ch,
+			Channel: chID,
 			Path:    path,
 			Data:    enc.MustMarshal(c, data),
 		})

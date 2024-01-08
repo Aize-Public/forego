@@ -21,7 +21,7 @@ type builder struct {
 func (this builder) build(c C, req enc.Node) any {
 	v := reflect.New(this.structType)
 	for _, c := range this.fields {
-		log.Debugf(nil, "set %v", c.value)
+		//log.Debugf(nil, "set %v", c.value)
 		v.Elem().Field(c.index).Set(c.value)
 	}
 
@@ -39,8 +39,19 @@ func (this builder) build(c C, req enc.Node) any {
 		c.ch.byPath[method.name] = func(c C, req enc.Node) error {
 			err := method.call(c, v, req)
 			if err != nil {
+				c.ch.Conn.Send(c, Frame{
+					Channel: c.ch.ID,
+					Path:    method.name,
+					Type:    "return",
+					Data:    enc.MustMarshal(c, err),
+				})
 				return ctx.NewErrorf(c, "ws[%s|%s]: %v", c.ch.ID, method.name, err)
 			}
+			c.ch.Conn.Send(c, Frame{
+				Channel: c.ch.ID,
+				Path:    method.name,
+				Type:    "return",
+			})
 			return nil
 		}
 	}

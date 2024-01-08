@@ -46,7 +46,7 @@ func TestExample(t *testing.T) {
 	c := test.Context(t)
 	h := ws.Handler{}
 	test.NoError(t, h.Register(c, &Example{}))
-	cli := h.NewTest(t)
+	cli := h.NewTest(c)
 
 	send, err := cli.Open(c, "example", nil, func(c ctx.C, f ws.Frame) error {
 		switch f.Type {
