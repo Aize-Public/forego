@@ -121,6 +121,9 @@ func (this *wsImpl) read(c ctx.C) ([]byte, error) {
 }
 
 func (this *wsImpl) Close(c ctx.C, status int) error {
-	this.conn.WriteClose(status)
+	err := this.conn.WriteClose(status)
+	if err != nil {
+		return err
+	}
 	return this.conn.Close()
 }

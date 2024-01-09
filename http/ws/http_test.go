@@ -1,6 +1,7 @@
 package ws_test
 
 import (
+	"io"
 	"testing"
 
 	"github.com/Aize-Public/forego/enc"
@@ -37,10 +38,16 @@ func TestHttp(t *testing.T) {
 	test.NoError(t, err)
 
 	buf := make([]byte, 1024)
-READ:
+LOOP:
 	for {
 		ct, err := conn.Read(buf)
-		test.NoError(t, err)
+		switch err {
+		case io.EOF:
+			break LOOP
+		case nil:
+		default:
+			test.NoError(t, err)
+		}
 		var f ws.Frame
 		test.NoError(t, enc.UnmarshalJSON(c, buf[0:ct], &f))
 		switch f.Type {
@@ -48,9 +55,6 @@ READ:
 			test.Fail(t, "unexpected %s", buf[0:ct])
 		case "":
 			t.Logf("recv %v", f.Data)
-		case "close":
-			t.Logf("closing...")
-			break READ
 		}
 	}
 }

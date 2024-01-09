@@ -74,6 +74,7 @@ func (c C) Reply(path string, obj any) error {
 //	})
 //}
 
+// Close the websocket
 func (c C) Close() error {
-	return c.ch.Close(c)
+	return c.ch.Conn.Close(c, EXIT)
 }

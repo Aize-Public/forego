@@ -27,7 +27,7 @@ func (this *Counter) Init(c C, amt int) error {
 func (this *Counter) Inc(c C, amt int) error {
 	log.Warnf(c, "%p.Inc(%v)", this, amt)
 	if amt < this.MinAmt {
-		return c.Error(fmt.Sprintf("amt %d < %d", amt, this.MinAmt))
+		return fmt.Errorf("amt %d < %d", amt, this.MinAmt)
 	}
 	this.Ct += amt
 	return this.Get(c)
@@ -46,10 +46,6 @@ func (this Counter) Special(c C, req struct {
 		return io.EOF
 	}
 	return nil
-}
-
-func (this Counter) Bye(c C) error {
-	return c.Close()
 }
 
 func (this *Counter) internal(c C) error { // nolint (meant to be unused)
@@ -98,10 +94,6 @@ func TestReflect(t *testing.T) {
 	test.NoError(t, conn.onData(c, Frame{
 		Channel: "001",
 		Path:    "get",
-	}))
-	test.NoError(t, conn.onData(c, Frame{
-		Channel: "001",
-		Path:    "bye",
 	}))
 	test.NoError(t, conn.Close(c, 1000))
 
