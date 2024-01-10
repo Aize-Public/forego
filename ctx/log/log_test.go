@@ -179,6 +179,13 @@ func TestLogger(t *testing.T) {
 		modifiedTags := []byte(`{"d":3,"a":"string","b":42,"c":{"1":true,"2":true,"3":false},"test":"TestLogger"}`)
 		test.EqualsJSON(t, modifiedTags, l.Tags)
 	}
+	{ // Change the minimum log level
+		log.SetDefaultLoggerLevel(slog.LevelInfo)
+		log.Infof(c, "Testing testing %d", 123)
+		log.Debugf(c, "Testing testing %d", 123) // this should not be logged now
+		l := verify(c, "info", "Testing testing 123", false)
+		test.EqualsJSON(t, expectedTags, l.Tags)
+	}
 }
 
 func BenchmarkLogger(b *testing.B) {

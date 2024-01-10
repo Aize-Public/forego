@@ -33,9 +33,19 @@ func (this *Tags) AsList() []any {
 
 var defaultLogger = NewDefaultLogger(os.Stdout)
 
-// Creates a slog JSON logger with a certain default configuration
+// This enables changing the minimum level of the default logger dynamically
+var DefaultLoggerLevel = new(slog.LevelVar)
+
+// Just a wrapper for the DefaultLoggerLevel.Set() method.
+// This only applies to the default logger, unless you use the DefaultLoggerLevel variable also in your custom handler.
+func SetDefaultLoggerLevel(level slog.Level) {
+	DefaultLoggerLevel.Set(level)
+}
+
+// Creates a slog JSON logger with a certain default configuration, with the default minimum log level of debug
 func NewDefaultLogger(out io.Writer) *slog.Logger {
-	return slog.New(slog.NewJSONHandler(out, &slog.HandlerOptions{Level: slog.LevelDebug, ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+	DefaultLoggerLevel.Set(slog.LevelDebug)
+	return slog.New(slog.NewJSONHandler(out, &slog.HandlerOptions{Level: DefaultLoggerLevel, ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
 		switch a.Key {
 		case slog.LevelKey:
 			level := a.Value.Any().(slog.Level)
