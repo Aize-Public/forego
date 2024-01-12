@@ -188,7 +188,30 @@ func TestLogger(t *testing.T) {
 	}
 }
 
-func BenchmarkLogger(b *testing.B) {
+func TestDefaultLogger(t *testing.T) {
+	c, cf := ctx.Background()
+	defer cf(nil)
+	// now this goes to stdout, so it's not easy to verify the output, but at least we'll know if it panics
+	log.Debugf(c, "Testing default logging %d", 42)
+}
+
+func BenchmarkLoggerDiscard(b *testing.B) {
+	c, cf := ctx.Background()
+	defer cf(nil)
+
+	c = log.WithLogger(c, log.NewDefaultLogger(io.Discard))
+
+	c = ctx.WithTag(c, "a", "string")
+	c = ctx.WithTag(c, "b", 42)
+	c = ctx.WithTag(c, "c", map[string]bool{"1": true, "2": true, "3": false})
+	c = ctx.WithTag(c, "d", []int{1, 2, 3})
+
+	for i := 0; i < b.N; i++ {
+		log.Debugf(c, "Benching logger [%d]", i)
+	}
+}
+
+func BenchmarkLoggerStdout(b *testing.B) {
 	c, cf := ctx.Background()
 	defer cf(nil)
 

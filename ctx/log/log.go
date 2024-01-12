@@ -57,78 +57,73 @@ func NewDefaultLogger(out io.Writer) *slog.Logger {
 	}}))
 }
 
-type loggerKey struct{}
-
 // Returns a new context with the custom logger attached
 func WithLogger(c ctx.C, logger *slog.Logger) ctx.C {
-	return context.WithValue(c, loggerKey{}, logger)
+	conf := getConfig(c)
+	conf.l = logger
+	return withConfig(c, conf)
 }
 
 // If a valid logger is attached to the context, it's returned together with a status of `true`.
 // If no valid logger is set on the context, it returns the default JSON logger instead, and `false`.
 func GetLogger(c ctx.C) (*slog.Logger, bool) {
-	if c != nil {
-		if l, ok := c.Value(loggerKey{}).(*slog.Logger); ok {
-			return l, true
-		}
+	conf := getConfig(c)
+	if conf.l != nil {
+		return conf.l, true
 	}
 	return defaultLogger, false
 }
 
-type testerKey struct{}
-
 // Returns a new context with the testing object attached.
 // This will in turn cause the log functions to call t.Helper() automatically
 func WithTester(c ctx.C, t *testing.T) ctx.C {
-	return context.WithValue(c, testerKey{}, t)
+	conf := getConfig(c)
+	conf.t = t
+	return withConfig(c, conf)
 }
 
 // Returns any testing object attached to the context, else nil
 func GetTester(c ctx.C) *testing.T {
-	if c != nil {
-		if t, ok := c.Value(testerKey{}).(*testing.T); ok {
-			return t
-		}
-	}
-	return nil
-}
-
-func helper(c ctx.C) func() {
-	if t := GetTester(c); t != nil {
-		return t.Helper
-	}
-	return func() {}
+	return getConfig(c).t
 }
 
 func Errorf(c ctx.C, f string, args ...any) {
-	helper(c)()
-	doLog(c, slog.LevelError, caller(1), f, args...)
+	conf := getConfig(c)
+	helper(conf)()
+	doLog(c, conf, slog.LevelError, caller(1), f, args...)
 }
 
 func Warnf(c ctx.C, f string, args ...any) {
-	helper(c)()
-	doLog(c, slog.LevelWarn, caller(1), f, args...)
+	conf := getConfig(c)
+	helper(conf)()
+	doLog(c, conf, slog.LevelWarn, caller(1), f, args...)
 }
 
 func Infof(c ctx.C, f string, args ...any) {
-	helper(c)()
-	doLog(c, slog.LevelInfo, caller(1), f, args...)
+	conf := getConfig(c)
+	helper(conf)()
+	doLog(c, conf, slog.LevelInfo, caller(1), f, args...)
 }
 
 func Debugf(c ctx.C, f string, args ...any) {
-	helper(c)()
-	doLog(c, slog.LevelDebug, caller(1), f, args...)
+	conf := getConfig(c)
+	helper(conf)()
+	doLog(c, conf, slog.LevelDebug, caller(1), f, args...)
 }
 
 // Log with a custom log level and src. To drop the src Attr entirely, leave the string empty.
 func Customf(c ctx.C, level slog.Level, src, f string, args ...any) {
-	helper(c)()
-	doLog(c, level, src, f, args...)
+	conf := getConfig(c)
+	helper(conf)()
+	doLog(c, conf, level, src, f, args...)
 }
 
-func doLog(c ctx.C, level slog.Level, src, f string, args ...any) {
-	helper(c)()
-	l, _ := GetLogger(c)
+func doLog(c ctx.C, conf *config, level slog.Level, src, f string, args ...any) {
+	helper(conf)()
+	l := defaultLogger
+	if conf.l != nil {
+		l = conf.l
+	}
 	tags := extractTags(c)
 	msg := formatMsg(c, &tags, f, args...)
 	if src != "" {
@@ -136,6 +131,33 @@ func doLog(c ctx.C, level slog.Level, src, f string, args ...any) {
 	} else {
 		l.LogAttrs(c, level, msg, slog.Group("tags", tags.AsList()...))
 	}
+}
+
+func helper(conf *config) func() {
+	if conf.t != nil {
+		return conf.t.Helper
+	}
+	return func() {}
+}
+
+type configKey struct{}
+
+type config struct {
+	l *slog.Logger
+	t *testing.T
+}
+
+func withConfig(c ctx.C, conf *config) ctx.C {
+	return context.WithValue(c, configKey{}, conf)
+}
+
+func getConfig(c ctx.C) *config {
+	if c != nil {
+		if conf, ok := c.Value(configKey{}).(*config); ok {
+			return conf
+		}
+	}
+	return &config{}
 }
 
 func extractTags(c ctx.C) Tags {
