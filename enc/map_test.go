@@ -8,10 +8,11 @@ import (
 )
 
 func TestMap(t *testing.T) {
+	c := test.Context(t)
 	p := enc.Pairs{
 		{JSON: "one", Value: enc.Integer(1)},
 		{JSON: "none", Value: enc.Nil{}},
 	}
-	test.EqualsJSON(t, 1, p.Find("one"))
-	test.EqualsJSON(t, nil, p.AsMap()["none"])
+	test.EqualsJSON(c, 1, p.Find("one"))
+	test.EqualsJSON(c, nil, p.AsMap()["none"])
 }

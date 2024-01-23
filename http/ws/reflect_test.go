@@ -104,7 +104,7 @@ func TestReflect(t *testing.T) {
 			var f Frame
 			enc.MustUnmarshal(c, msg.Data, &f)
 			if f.Type == "error" {
-				test.ContainsJSON(t, f.Data, "amt")
+				test.ContainsJSON(c, f.Data, "amt")
 			} else {
 				test.OK(t, "recv: %+v", f.Data)
 			}

@@ -77,19 +77,19 @@ func TestUnmarshal(t *testing.T) {
 		}
 		err := h.Unmarshal(c, enc.Map{"x": enc.Map{"i": enc.Integer(314)}}, &y)
 		test.NoError(t, err)
-		test.ContainsJSON(t, y, "314")
+		test.ContainsJSON(c, y, "314")
 
 		y.X = nil
 		err = h.Unmarshal(c, enc.Map{}, &y)
 		test.NoError(t, err)
 		test.Nil(t, y.X)
-		test.ContainsJSON(t, y, "null")
+		test.ContainsJSON(c, y, "null")
 
 		y.X = nil
 		err = h.Unmarshal(c, enc.Map{"x": enc.Nil{}}, &y)
 		test.NoError(t, err)
 		test.Nil(t, y.X)
-		test.ContainsJSON(t, y, "null")
+		test.ContainsJSON(c, y, "null")
 	})
 }
 
@@ -112,7 +112,7 @@ func TestMarshal(t *testing.T) {
 	n, err := h.Marshal(c, x)
 	test.NoError(t, err)
 
-	test.EqualsJSON(t, enc.Pairs{ // NOTE(oha): since we conflate a struct, we preserve the order of the fields using enc.Pairs
+	test.EqualsJSON(c, enc.Pairs{ // NOTE(oha): since we conflate a struct, we preserve the order of the fields using enc.Pairs
 		{"S", "s", enc.String("foo")},
 		{"I", "i", enc.Integer(42)},
 		{"V", "v", enc.List{
@@ -156,7 +156,7 @@ func TestOmitEmpty(t *testing.T) {
 		X any     `json:"fieldX,omitempty"`
 	}
 	j := enc.MustMarshalJSON(c, x{})
-	test.NotContainsJSON(t, j, "field")
+	test.NotContainsJSON(c, j, "field")
 }
 
 func TestCompat(t *testing.T) {

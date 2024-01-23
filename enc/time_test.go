@@ -27,7 +27,7 @@ func TestTime(t *testing.T) {
 	test.Contains(t, n.GoString(), fmt.Sprint(in.T.Year())) // enc.Pairs
 	j := enc.JSON{}.Encode(c, n)
 	t.Logf("j: %s", j)
-	test.ContainsJSON(t, j, fmt.Sprint(in.T.Year()))
+	test.ContainsJSON(c, j, fmt.Sprint(in.T.Year()))
 	n2, err := enc.JSON{}.Decode(c, j)
 	test.NoError(t, err)
 	test.Contains(t, n2.GoString(), fmt.Sprint(in.T.Year())) // enc.Map

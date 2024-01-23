@@ -19,5 +19,5 @@ func TestConfig(t *testing.T) {
 			return ""
 		}
 	})
-	test.EqualsJSON(t, ":8080", cfg.Listen)
+	test.EqualsJSON(c, ":8080", cfg.Listen)
 }

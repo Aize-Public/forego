@@ -18,6 +18,6 @@ func TestPairs(t *testing.T) {
 		{Name: "Bar", JSON: "bar", Value: enc.Integer(7)},
 	}
 	enc.MustUnmarshal(c, p, &x)
-	test.EqualsJSON(t, 3, x.Foo)
-	test.EqualsJSON(t, 7, x.Bar)
+	test.EqualsJSON(c, 3, x.Foo)
+	test.EqualsJSON(c, 7, x.Bar)
 }

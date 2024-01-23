@@ -22,5 +22,5 @@ func TestServer(t *testing.T) {
 
 	res, err := http.DefaultClient.Post(c, "http://"+addr.String()+"/test/one", []byte(`[]`))
 	test.NoError(t, err)
-	test.ContainsJSON(t, "one", string(res))
+	test.ContainsJSON(c, "one", string(res))
 }

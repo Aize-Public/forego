@@ -62,7 +62,7 @@ func TestAPI(t *testing.T) {
 		obj, err := ser.Recv(c, data)
 		test.NoError(t, err)
 		test.NotEmpty(t, obj)
-		test.EqualsJSON(t, alice, obj.UID)
+		test.EqualsJSON(c, alice, obj.UID)
 
 		t.Logf("Foo()ing...")
 		err = obj.Do(c)

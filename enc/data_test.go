@@ -47,8 +47,8 @@ func testData[T any](c ctx.C, t *testing.T, in T) {
 
 	jsonOut, encOut, jsonJson, encJson := testDataHelper(c, t, in)
 
-	test.EqualsJSON(t, in, encOut)
-	test.EqualsJSON(t, jsonOut, encOut)
+	test.EqualsJSON(c, in, encOut)
+	test.EqualsJSON(c, jsonOut, encOut)
 	test.EqualsGo(t, string(jsonJson), string(encJson))
 }
 

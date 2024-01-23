@@ -18,16 +18,17 @@ func testAssign(c ctx.C, b any) string {
 }
 
 func TestArg(t *testing.T) {
-	c := ctx.TODO()
+	c := test.Context(t)
+
 	i := 2
 	call, _, err := testCall(c, i == 4/i)
-	test.EqualsJSON(t, nil, err)
-	test.EqualsJSON(t, "c", call.Args[0].Src)
-	test.EqualsJSON(t, "i == 4/i", call.Args[1].Src)
+	test.EqualsJSON(c, nil, err)
+	test.EqualsJSON(c, "c", call.Args[0].Src)
+	test.EqualsJSON(c, "i == 4/i", call.Args[1].Src)
 
 	{
 		err := errors.New("my error")
 		src := testAssign(c, err)
-		test.EqualsJSON(t, `errors.New("my error")`, src)
+		test.EqualsJSON(c, `errors.New("my error")`, src)
 	}
 }
