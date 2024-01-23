@@ -98,6 +98,7 @@ type fieldInit struct {
 }
 
 func (this *builder) inspect(c ctx.C, obj any) error {
+	log.Debugf(c, "ws.inspect(%T %v)", obj, obj)
 	origVal := reflect.ValueOf(obj)
 	switch origVal.Kind() {
 	case reflect.Pointer:

@@ -67,7 +67,7 @@ func (this *Handler) Register(c ctx.C, obj any) error {
 		return err
 	}
 	this.byPath.Store(b.name, func(c ctx.C, conn *Conn, f Frame) error {
-		log.Debugf(c, "new %q...", b.name)
+		log.Debugf(c, "registered new path %q using %T...", b.name, obj)
 		ch := &Channel{
 			Conn:   conn,
 			byPath: map[string]func(c C, n enc.Node) error{},

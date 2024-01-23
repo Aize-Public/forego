@@ -1,6 +1,9 @@
 package ws
 
 import (
+	"errors"
+	"runtime"
+
 	"github.com/Aize-Public/forego/ctx"
 	"github.com/Aize-Public/forego/ctx/log"
 	"github.com/Aize-Public/forego/enc"
@@ -28,14 +31,30 @@ func (this *Channel) onData(c ctx.C, f Frame) error {
 		return ctx.NewErrorf(c, "no %q for channel %q", f.Path, f.Channel)
 	}
 	log.Debugf(c, "ch[%q].%q(%v)", f.Channel, f.Path, f.Data)
-	err := fn(C{C: c, ch: this}, f.Data)
-	if err != nil {
-		//log.Warnf(c, "ws: sending %v", err)
-		_ = this.Conn.Send(c, Frame{
-			Channel: this.ID,
-			Type:    "error",
-			Data:    enc.MustMarshal(c, err.Error()),
-		})
+
+	ok := func() bool {
+		defer func() {
+			if r := recover(); r != nil {
+				const size = 64 << 10
+				buf := make([]byte, size)
+				buf = buf[:runtime.Stack(buf, false)]
+				log.Errorf(c, "http/ws: panic serving: %v\n%s", r, buf)
+			}
+		}()
+		err := fn(C{C: c, ch: this}, f.Data)
+		if err != nil {
+			//log.Warnf(c, "ws: sending %v", err)
+			_ = this.Conn.Send(c, Frame{
+				Channel: this.ID,
+				Type:    "error",
+				Data:    enc.MustMarshal(c, err.Error()),
+			})
+		}
+		return true
+	}()
+
+	if !ok {
+		return errors.New("panic")
 	}
 	return nil
 }

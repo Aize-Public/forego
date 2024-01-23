@@ -59,7 +59,7 @@ func (this *Conn) Loop(c ctx.C) error {
 				log.Warnf(c, "can't parse request: %v", err)
 				continue
 			}
-			err = this.onData(c, f) // go routine?
+			err = this.onData(c, f) // we want no implicit parallelism here
 			if err != nil {
 				log.Errorf(c, "can't process request: %v", err)
 				continue
