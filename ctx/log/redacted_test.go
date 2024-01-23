@@ -14,6 +14,6 @@ func TestRedacted(t *testing.T) {
 	c = log.WithLogger(c, log.NewDefaultLogger(buf))
 	s := log.RedactedString("foo")
 	log.Debugf(c, "redacted %s string", s)
-	test.NotContainsJSON(t, buf.String(), "foo")
-	test.ContainsJSON(t, buf.String(), "***")
+	test.NotContainsJSON(c, buf.String(), "foo")
+	test.ContainsJSON(c, buf.String(), "***")
 }

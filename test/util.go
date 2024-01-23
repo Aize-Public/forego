@@ -7,6 +7,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
+	"github.com/Aize-Public/forego/ctx"
 	"github.com/Aize-Public/forego/enc"
 	"github.com/Aize-Public/forego/utils/ast"
 )
@@ -14,7 +15,7 @@ import (
 // helper, returns the jsonish value as string, or an error as string
 // just to make tests easier to manage
 // NOTE: we assume the error message is never a valid jsonish, so there is no ambiguity
-func jsonish(v any) string {
+func jsonish(c ctx.C, v any) string {
 	switch x := v.(type) {
 	case json.RawMessage:
 		_ = json.Unmarshal(x, &v) // make it into any, so we can marshal it again and canonicalize it
@@ -27,8 +28,7 @@ func jsonish(v any) string {
 			_ = json.Unmarshal([]byte(x), &v) // make it into any, so we can marshal it again and canonicalize it
 		}
 	}
-	//j, err := json.Marshal(v)
-	j, err := enc.MarshalJSON(nil, v)
+	j, err := enc.MarshalJSON(c, v)
 	if err != nil {
 		return err.Error()
 	}

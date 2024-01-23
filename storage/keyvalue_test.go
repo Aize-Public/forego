@@ -24,7 +24,7 @@ func TestKeyvalue(t *testing.T) {
 	{
 		n, err := kv.Get(c, "one")
 		test.NoError(t, err)
-		test.EqualsJSON(t, `{"num":1}`, n)
+		test.EqualsJSON(c, `{"num":1}`, n)
 	}
 	{
 		err := kv.Upsert(c, "two", enc.Map{"num": enc.Integer(2), "type": enc.String("foo")})
@@ -33,7 +33,7 @@ func TestKeyvalue(t *testing.T) {
 	{
 		n, err := kv.Get(c, "one")
 		test.NoError(t, err)
-		test.EqualsJSON(t, `{"num":1}`, n)
+		test.EqualsJSON(c, `{"num":1}`, n)
 	}
 	{
 		tot := 0
@@ -55,7 +55,7 @@ func TestKeyvalue(t *testing.T) {
 			Val:   enc.String("foo"),
 		})
 		test.NoError(t, err)
-		test.EqualsJSON(t, `[2]`, vals)
+		test.EqualsJSON(c, `[2]`, vals)
 	}
 	{
 		err := kv.Upsert(c, "three", enc.Map{"num": enc.Integer(3)})

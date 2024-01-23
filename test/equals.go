@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Aize-Public/forego/ctx"
+	"github.com/Aize-Public/forego/ctx/log"
 	"github.com/Aize-Public/forego/utils/ast"
 )
 
@@ -56,20 +58,22 @@ func equalGo(expect, got any) res {
 }
 
 // compare using JSON
-func EqualsJSON(t *testing.T, expect, got any) {
+func EqualsJSON(c ctx.C, expect, got any) {
+	t := log.GetTester(c)
 	t.Helper()
-	equalJSON(expect, got).prefix("EqualsJSON(%s, %s)", ast.Assignment(0, 1), ast.Assignment(0, 2)).true(t)
+	equalJSON(c, expect, got).prefix("EqualsJSON(%s, %s)", ast.Assignment(0, 1), ast.Assignment(0, 2)).true(t)
 }
 
 // compare using JSON
-func NotEqualsJSON(t *testing.T, expect, got any) {
+func NotEqualsJSON(c ctx.C, expect, got any) {
+	t := log.GetTester(c)
 	t.Helper()
-	equalJSON(expect, got).prefix("NotEqualsJSON(%s, %s)", ast.Assignment(0, 1), ast.Assignment(0, 2)).false(t)
+	equalJSON(c, expect, got).prefix("NotEqualsJSON(%s, %s)", ast.Assignment(0, 1), ast.Assignment(0, 2)).false(t)
 }
 
-func equalJSON(expect, got any) res {
-	e := jsonish(expect)
-	g := jsonish(got)
+func equalJSON(c ctx.C, expect, got any) res {
+	e := jsonish(c, expect)
+	g := jsonish(c, got)
 	if e == g {
 		return res{true, e}
 	} else {

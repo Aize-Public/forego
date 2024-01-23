@@ -6,12 +6,14 @@ import (
 	"testing"
 
 	"github.com/Aize-Public/forego/ctx"
+	"github.com/Aize-Public/forego/ctx/log"
 	"github.com/Aize-Public/forego/test"
 )
 
 func TestTags(t *testing.T) {
 	var c ctx.C
 	c = context.Background()
+	c = log.WithTester(c, t)
 
 	fetch := func(c ctx.C) []any {
 		t.Helper()
@@ -35,18 +37,18 @@ func TestTags(t *testing.T) {
 	c = ctx.WithTag(c, "a", "one")
 	{
 		list := fetch(c)
-		test.EqualsJSON(t, []any{"one"}, list)
+		test.EqualsJSON(c, []any{"one"}, list)
 	}
 
 	c = ctx.WithTag(c, "b", "two")
 	{
 		list := fetch(c)
-		test.EqualsJSON(t, []any{"one", "two"}, list)
+		test.EqualsJSON(c, []any{"one", "two"}, list)
 	}
 
 	c = ctx.WithTag(c, "a", "typo")
 	{
 		list := fetch(c)
-		test.EqualsJSON(t, []any{"one", "two", "typo"}, list) // NOTE(oha): we range over all the assignments, no check for duplications
+		test.EqualsJSON(c, []any{"one", "two", "typo"}, list) // NOTE(oha): we range over all the assignments, no check for duplications
 	}
 }

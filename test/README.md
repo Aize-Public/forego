@@ -74,7 +74,7 @@ The simplest test, will log the argument source of the condition
 ```go
   test.EqualsGo(t, 123, sum(81,42)) // compare using fmt.Sprintf("%#v")
   test.EqualsStr(t, "123", "12"+"3") // compare strings
-  test.EqualsJSON(t, []any{1}, []int{1})  // compare using enc.MarshalJSON()
+  test.EqualsJSON(c, []any{1}, []int{1})  // compare using enc.MarshalJSON()
 ```
 
 

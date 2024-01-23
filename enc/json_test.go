@@ -82,9 +82,9 @@ func TestJSON(t *testing.T) {
 		checkLeft(t, `{"one":3.14}`, enc.Map{"one": enc.Float(3.14)})
 		m := enc.Map{"one": enc.Integer(1), "nil": enc.Nil{}, "foo": enc.String("bar")}
 		j := codec.Encode(c, m)
-		test.ContainsJSON(t, j, `"nil":null`)
-		test.ContainsJSON(t, j, `"foo":"bar"`)
-		test.ContainsJSON(t, j, `"one":1`)
+		test.ContainsJSON(c, j, `"nil":null`)
+		test.ContainsJSON(c, j, `"foo":"bar"`)
+		test.ContainsJSON(c, j, `"one":1`)
 	})
 
 	t.Run("pairs", func(t *testing.T) {

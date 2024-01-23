@@ -26,5 +26,5 @@ func TestCall(t *testing.T) {
 
 	_, err = http.DefaultClient.Post(c, "http://"+addr.String()+"/test/call", []byte(`[]`))
 	test.Error(t, err)
-	test.ContainsJSON(t, err.Error(), "Bad Request")
+	test.ContainsJSON(c, err.Error(), "Bad Request")
 }

@@ -8,10 +8,11 @@ import (
 )
 
 func TestUnique(t *testing.T) {
+	c := test.Context(t)
 	in := []int{}
 	in = lists.AddUnique(in, 1)
 	in = lists.AddUnique(in, 2)
 	in = lists.AddUnique(in, 1)
 	in = lists.AddUnique(in, 1)
-	test.EqualsJSON(t, `[1,2]`, in)
+	test.EqualsJSON(c, `[1,2]`, in)
 }
