@@ -10,7 +10,6 @@ import (
 	"os"
 	"runtime"
 	"strings"
-	"testing"
 
 	"github.com/Aize-Public/forego/ctx"
 )
@@ -22,6 +21,7 @@ type Loggable interface {
 
 type Tags map[string]ctx.JSON
 
+// Converts the map of tags to a slog-friendly list
 func (this *Tags) AsList() []any {
 	res := make([]any, 0, len(*this)*2)
 	for k, v := range *this {
@@ -31,7 +31,19 @@ func (this *Tags) AsList() []any {
 	return res
 }
 
-var defaultLogger = NewDefaultLogger(os.Stdout)
+// Extracts any tags attached to the context
+func ExtractTags(c ctx.C) Tags {
+	out := Tags{}
+	_ = ctx.RangeTag(c, func(k string, j ctx.JSON) error {
+		out[k] = j
+		return nil
+	})
+	return out
+}
+
+type LogFunc func(c ctx.C, level slog.Level, src, f string, args ...any)
+
+var defaultLogFunc = wrapSlogLogger(NewDefaultSlogLogger(os.Stdout))
 
 // This enables changing the minimum level of the default logger dynamically
 var DefaultLoggerLevel = new(slog.LevelVar)
@@ -42,8 +54,44 @@ func SetDefaultLoggerLevel(level slog.Level) {
 	DefaultLoggerLevel.Set(level)
 }
 
+// Returns a new context with the custom slog logger attached,
+// with automatic handling of tags and Loggable arguments.
+func WithSlogLogger(c ctx.C, l *slog.Logger) ctx.C {
+	return WithLogFunc(c, wrapSlogLogger(l))
+}
+
+func wrapSlogLogger(l *slog.Logger) LogFunc {
+	return func(c ctx.C, level slog.Level, src, f string, args ...any) {
+		tags := ExtractTags(c)
+		msg := FormatMsg(c, &tags, f, args...)
+		if src != "" {
+			l.LogAttrs(c, level, msg, slog.String("src", src), slog.Group("tags", tags.AsList()...))
+		} else {
+			l.LogAttrs(c, level, msg, slog.Group("tags", tags.AsList()...))
+		}
+	}
+}
+
+// Returns a new context with the custom LogFunc attached,
+// but without handling of tags and Loggable arguments.
+func WithLogFunc(c ctx.C, l LogFunc) ctx.C {
+	conf := extractConfig(c)
+	conf.logFunc = l
+	return withConfig(c, conf)
+}
+
+// Returns a new context with the specified helper func attached,
+// which is called automatically by functions through the log stack.
+// Useful for tests if you do logging with the t.Logf func (wrapped in a LogFunc),
+// and add the t.Helper func with this - ensuring that the relevant src line is logged.
+func WithHelper(c ctx.C, h func()) ctx.C {
+	conf := extractConfig(c)
+	conf.helper = h
+	return withConfig(c, conf)
+}
+
 // Creates a slog JSON logger with a certain default configuration, with the default minimum log level of debug
-func NewDefaultLogger(out io.Writer) *slog.Logger {
+func NewDefaultSlogLogger(out io.Writer) *slog.Logger {
 	DefaultLoggerLevel.Set(slog.LevelDebug)
 	return slog.New(slog.NewJSONHandler(out, &slog.HandlerOptions{Level: DefaultLoggerLevel, ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
 		switch a.Key {
@@ -57,85 +105,51 @@ func NewDefaultLogger(out io.Writer) *slog.Logger {
 	}}))
 }
 
-// Returns a new context with the custom logger attached
-func WithLogger(c ctx.C, logger *slog.Logger) ctx.C {
-	conf := getConfig(c)
-	conf.l = logger
-	return withConfig(c, conf)
-}
-
-// If a valid logger is attached to the context, it's returned together with a status of `true`.
-// If no valid logger is set on the context, it returns the default JSON logger instead, and `false`.
-func GetLogger(c ctx.C) (*slog.Logger, bool) {
-	conf := getConfig(c)
-	if conf.l != nil {
-		return conf.l, true
-	}
-	return defaultLogger, false
-}
-
-// Returns a new context with the testing object attached.
-// This will in turn cause the log functions to call t.Helper() automatically
-func WithTester(c ctx.C, t *testing.T) ctx.C {
-	conf := getConfig(c)
-	conf.t = t
-	return withConfig(c, conf)
-}
-
-// Returns any testing object attached to the context, else nil
-func GetTester(c ctx.C) *testing.T {
-	return getConfig(c).t
-}
-
 func Errorf(c ctx.C, f string, args ...any) {
-	conf := getConfig(c)
+	conf := extractConfig(c)
 	helper(conf)()
 	doLog(c, conf, slog.LevelError, caller(1), f, args...)
 }
 
 func Warnf(c ctx.C, f string, args ...any) {
-	conf := getConfig(c)
+	conf := extractConfig(c)
 	helper(conf)()
 	doLog(c, conf, slog.LevelWarn, caller(1), f, args...)
 }
 
 func Infof(c ctx.C, f string, args ...any) {
-	conf := getConfig(c)
+	conf := extractConfig(c)
 	helper(conf)()
 	doLog(c, conf, slog.LevelInfo, caller(1), f, args...)
 }
 
 func Debugf(c ctx.C, f string, args ...any) {
-	conf := getConfig(c)
+	conf := extractConfig(c)
 	helper(conf)()
 	doLog(c, conf, slog.LevelDebug, caller(1), f, args...)
 }
 
-// Log with a custom log level and src. To drop the src Attr entirely, leave the string empty.
+// Log with a custom log level and src.
+// To drop the src Attr entirely, for slog loggers, leave the string empty.
 func Customf(c ctx.C, level slog.Level, src, f string, args ...any) {
-	conf := getConfig(c)
+	conf := extractConfig(c)
 	helper(conf)()
 	doLog(c, conf, level, src, f, args...)
 }
 
 func doLog(c ctx.C, conf *config, level slog.Level, src, f string, args ...any) {
 	helper(conf)()
-	l := defaultLogger
-	if conf.l != nil {
-		l = conf.l
+
+	logFunc := defaultLogFunc
+	if conf.logFunc != nil {
+		logFunc = conf.logFunc
 	}
-	tags := extractTags(c)
-	msg := formatMsg(c, &tags, f, args...)
-	if src != "" {
-		l.LogAttrs(c, level, msg, slog.String("src", src), slog.Group("tags", tags.AsList()...))
-	} else {
-		l.LogAttrs(c, level, msg, slog.Group("tags", tags.AsList()...))
-	}
+	logFunc(c, level, src, f, args...)
 }
 
 func helper(conf *config) func() {
-	if conf.t != nil {
-		return conf.t.Helper
+	if conf.helper != nil {
+		return conf.helper
 	}
 	return func() {}
 }
@@ -143,15 +157,15 @@ func helper(conf *config) func() {
 type configKey struct{}
 
 type config struct {
-	l *slog.Logger
-	t *testing.T
+	logFunc LogFunc
+	helper  func()
 }
 
 func withConfig(c ctx.C, conf *config) ctx.C {
 	return context.WithValue(c, configKey{}, conf)
 }
 
-func getConfig(c ctx.C) *config {
+func extractConfig(c ctx.C) *config {
 	if c != nil {
 		if conf, ok := c.Value(configKey{}).(*config); ok {
 			return conf
@@ -160,16 +174,7 @@ func getConfig(c ctx.C) *config {
 	return &config{}
 }
 
-func extractTags(c ctx.C) Tags {
-	out := Tags{}
-	_ = ctx.RangeTag(c, func(k string, j ctx.JSON) error {
-		out[k] = j
-		return nil
-	})
-	return out
-}
-
-func formatMsg(c ctx.C, tags *Tags, f string, args ...any) string {
+func FormatMsg(c ctx.C, tags *Tags, f string, args ...any) string {
 	errs := []map[string]any{}
 	for i := 0; i < len(args); i++ {
 		switch arg := args[i].(type) {
@@ -183,7 +188,7 @@ func formatMsg(c ctx.C, tags *Tags, f string, args ...any) string {
 			if errors.As(arg, &err) {
 				m["stack"] = err.Stack
 				if err.C != nil {
-					m["tags"] = extractTags(err.C)
+					m["tags"] = ExtractTags(err.C)
 				}
 			}
 			errs = append(errs, m)

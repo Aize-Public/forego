@@ -11,7 +11,7 @@ import (
 func TestRedacted(t *testing.T) {
 	c := test.Context(t)
 	buf := &bytes.Buffer{}
-	c = log.WithLogger(c, log.NewDefaultLogger(buf))
+	c = log.WithSlogLogger(c, log.NewDefaultSlogLogger(buf))
 	s := log.RedactedString("foo")
 	log.Debugf(c, "redacted %s string", s)
 	test.NotContainsJSON(c, buf.String(), "foo")

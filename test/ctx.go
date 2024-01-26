@@ -2,20 +2,30 @@ package test
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
-	"os"
 	"testing"
 
 	"github.com/Aize-Public/forego/ctx"
 	"github.com/Aize-Public/forego/ctx/log"
 )
 
+// Creates a new context for use in tests, with the testing object
+// and a custom logger attached (which does logging with t.Logf).
+// The context is cancelled automatically when the test ends.
 func Context(t *testing.T) ctx.C {
 	t.Helper()
 	c := context.Background()
 	c = ctx.WithTag(c, "test", t.Name())
-	c = log.WithTester(c, t)
-	c = log.WithLogger(c, slog.New(&TestLogger{Logger: log.NewDefaultLogger(os.Stdout)}))
+	c = WithTester(c, t)
+
+	if isTerminal { // TODO(oha) allow for an env variable to override
+		c = log.WithHelper(c, t.Helper)
+		c = log.WithLogFunc(c, func(c ctx.C, level slog.Level, src, f string, args ...any) {
+			t.Helper()
+			t.Logf("%s: %s", level, fmt.Sprintf(f, args...))
+		})
+	}
 
 	d, ok := t.Deadline()
 	if ok {
@@ -29,31 +39,19 @@ func Context(t *testing.T) ctx.C {
 	}
 }
 
-type TestLogger struct {
-	Logger *slog.Logger
+type testerKey struct{}
+
+// Returns a new context with the testing object attached
+func WithTester(c ctx.C, t testing.TB) ctx.C {
+	return context.WithValue(c, testerKey{}, t)
 }
 
-var _ slog.Handler = &TestLogger{}
-
-func (this *TestLogger) Handle(c context.Context, record slog.Record) error {
-	if !isTerminal { // TODO(oha) allow for an env variable to override
-		return this.Logger.Handler().Handle(c, record)
-	} else {
-		t := log.GetTester(c)
-		t.Helper()
-		t.Logf("%s: %s", record.Level, record.Message)
+// Returns any testing object attached to the context, else nil
+func ExtractTester(c ctx.C) *testing.T {
+	if c != nil {
+		if t, ok := c.Value(testerKey{}).(*testing.T); ok {
+			return t
+		}
 	}
 	return nil
-}
-
-func (this *TestLogger) Enabled(c context.Context, level slog.Level) bool {
-	return true
-}
-
-func (this *TestLogger) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return this
-}
-
-func (this *TestLogger) WithGroup(name string) slog.Handler {
-	return this
 }

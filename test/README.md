@@ -69,7 +69,7 @@ The simplest test, will log the argument source of the condition
 ```
 
 
-### `Equal…()` and `NotEqual…()`
+### `Equals…()` and `NotEquals…()`
 
 ```go
   test.EqualsGo(t, 123, sum(81,42)) // compare using fmt.Sprintf("%#v")
