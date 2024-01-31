@@ -6,14 +6,12 @@ import (
 	"testing"
 
 	"github.com/Aize-Public/forego/ctx"
-	"github.com/Aize-Public/forego/ctx/log"
 	"github.com/Aize-Public/forego/test"
 )
 
 func TestTags(t *testing.T) {
-	var c ctx.C
-	c = context.Background()
-	c = log.WithTester(c, t)
+	c := context.Background()
+	c = test.WithTester(c, t)
 
 	fetch := func(c ctx.C) []any {
 		t.Helper()

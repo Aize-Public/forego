@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/Aize-Public/forego/ctx"
-	"github.com/Aize-Public/forego/ctx/log"
 	"github.com/Aize-Public/forego/utils/ast"
 )
 
@@ -59,14 +58,14 @@ func equalGo(expect, got any) res {
 
 // compare using JSON
 func EqualsJSON(c ctx.C, expect, got any) {
-	t := log.GetTester(c)
+	t := ExtractTester(c)
 	t.Helper()
 	equalJSON(c, expect, got).prefix("EqualsJSON(%s, %s)", ast.Assignment(0, 1), ast.Assignment(0, 2)).true(t)
 }
 
 // compare using JSON
 func NotEqualsJSON(c ctx.C, expect, got any) {
-	t := log.GetTester(c)
+	t := ExtractTester(c)
 	t.Helper()
 	equalJSON(c, expect, got).prefix("NotEqualsJSON(%s, %s)", ast.Assignment(0, 1), ast.Assignment(0, 2)).false(t)
 }

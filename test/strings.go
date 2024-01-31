@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/Aize-Public/forego/ctx"
-	"github.com/Aize-Public/forego/ctx/log"
 )
 
 func NotContains(t *testing.T, str, pattern string) {
@@ -26,7 +25,7 @@ func ContainsGo(t *testing.T, obj any, pattern string) {
 
 // check if the json of obj contains pattern
 func ContainsJSON(c ctx.C, obj any, pattern string) {
-	t := log.GetTester(c)
+	t := ExtractTester(c)
 	t.Helper()
 	s := jsonish(c, obj)
 	contains(s, pattern).true(t)
@@ -34,7 +33,7 @@ func ContainsJSON(c ctx.C, obj any, pattern string) {
 
 // check if the json of obj does NOT contains pattern
 func NotContainsJSON(c ctx.C, obj any, pattern string) {
-	t := log.GetTester(c)
+	t := ExtractTester(c)
 	t.Helper()
 	s := jsonish(c, obj)
 	contains(s, pattern).false(t)

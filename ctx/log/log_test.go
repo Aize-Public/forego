@@ -50,7 +50,7 @@ func TestLogger(t *testing.T) {
 
 	// Add logger with custom buffer
 	buf := &bytes.Buffer{}
-	c = log.WithLogger(c, log.NewDefaultLogger(buf))
+	c = log.WithSlogLogger(c, log.NewDefaultSlogLogger(buf))
 
 	verify := func(c ctx.C, expectedLevel, expectedMsg string, emptySrc bool) expectedLogStruct {
 		t.Helper()
@@ -195,11 +195,58 @@ func TestDefaultLogger(t *testing.T) {
 	log.Debugf(c, "Testing default logging %d", 42)
 }
 
+func TestLogFunc(t *testing.T) {
+	c, cf := ctx.Background()
+	defer cf(nil)
+
+	// Store helper functions using custom helper func
+	helpers := make(map[string]bool)
+	c = log.WithHelper(c, func() {
+		pc, _, _, ok := runtime.Caller(1)
+		pcs := []uintptr{pc}
+		frame, _ := runtime.CallersFrames(pcs).Next()
+		helpers[frame.Function] = ok
+		t.Logf("helper func: %v (%t)", frame.Function, ok)
+	})
+
+	c = log.WithLogFunc(c, func(c ctx.C, level slog.Level, src, f string, args ...any) {
+		// Ensure that the helper function is called where necessary
+		var pcs [50]uintptr
+		n := runtime.Callers(2, pcs[:])
+		test.Assert(t, n > 0)
+		var src2 string
+		frames := runtime.CallersFrames(pcs[:n])
+		for frame, more := frames.Next(); more; frame, more = frames.Next() {
+			t.Logf("frame func: %v", frame.Function)
+			if !helpers[frame.Function] { // pick the first non-helper func
+				src2 = fmt.Sprintf("%s:%d", frame.File, frame.Line)
+				break
+			}
+		}
+		test.NotEmpty(t, src2)
+		test.EqualsStr(t, src, src2) // with this approach, we should end up with the same src as the one provided by the log lib
+
+		test.EqualsStr(t, "Testing %d", f)
+		test.EqualsGo(t, 1, len(args))
+		test.EqualsGo(t, 42, args[0])
+	})
+	log.Debugf(c, "Testing %d", 42)
+	log.Infof(c, "Testing %d", 42)
+	log.Warnf(c, "Testing %d", 42)
+	log.Errorf(c, "Testing %d", 42)
+	log.Customf(c, slog.LevelDebug-1, caller(0), "Testing %d", 42)
+}
+
+func caller(above int) string {
+	_, file, line, _ := runtime.Caller(above + 1)
+	return fmt.Sprintf("%s:%d", file, line)
+}
+
 func BenchmarkLoggerDiscard(b *testing.B) {
 	c, cf := ctx.Background()
 	defer cf(nil)
 
-	c = log.WithLogger(c, log.NewDefaultLogger(io.Discard))
+	c = log.WithSlogLogger(c, log.NewDefaultSlogLogger(io.Discard))
 
 	c = ctx.WithTag(c, "a", "string")
 	c = ctx.WithTag(c, "b", 42)
