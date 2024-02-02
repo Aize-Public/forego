@@ -67,7 +67,8 @@ func (this StackFrame) ShortFunc() string {
 }
 
 func (this StackFrame) FuncName() string {
-	p := strings.Split(this.Func, ".")
+	x := strings.TrimSuffix(this.Func, "[...]") // remove generics
+	p := strings.Split(x, ".")                  // last part
 	return p[len(p)-1]
 }
 
