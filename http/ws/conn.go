@@ -6,19 +6,23 @@ import (
 	"github.com/Aize-Public/forego/ctx"
 	"github.com/Aize-Public/forego/ctx/log"
 	"github.com/Aize-Public/forego/enc"
-	"github.com/Aize-Public/forego/utils/sync"
 )
 
+// a server side generic websocket connection
 type Conn struct {
-	h      *Handler
-	ws     impl
-	byChan sync.Map[string, *Channel]
+	ws  impl
+	sid string
+	//byChan sync.Map[string, *Channel]
+	onData func(c ctx.C, n enc.Node) error
 }
+
+func (this Conn) SID() string { return this.sid }
 
 func (this *Conn) Close(c ctx.C, reason int) error {
 	return this.ws.Close(c, reason)
 }
 
+// main loop, which sends evento to the connection HandlerFunc
 func (this *Conn) Loop(c ctx.C) error {
 	inbox := make(chan enc.Node)
 	go func() {
@@ -53,39 +57,18 @@ func (this *Conn) Loop(c ctx.C) error {
 			if !ok {
 				return ctx.NewErrorf(c, "inbox closed")
 			}
-			var f Frame
-			err := enc.Unmarshal(c, n, &f)
+			err := this.onData(c, n) // we want no implicit parallelism here
 			if err != nil {
-				log.Warnf(c, "can't parse request: %v", err)
-				continue
-			}
-			err = this.onData(c, f) // we want no implicit parallelism here
-			if err != nil {
-				log.Errorf(c, "can't process request: %v", err)
-				continue
+				this.Send(c, Frame{
+					Type: "disconnect",
+					Data: enc.MustMarshal(c, err),
+				})
+				return ctx.NewErrorf(c, "closing: %v", err)
 			}
 		}
 	}
 }
 
-func (this *Conn) onData(c ctx.C, f Frame) error {
-	switch f.Type {
-	case "close":
-		// WAIT FOR STUFF?
-		return this.Close(c, 1000)
-	case "new", "open":
-		if fn := this.h.byPath.Get(f.Path); fn != nil {
-			return fn(c, this, f)
-		}
-		return ctx.NewErrorf(c, "unknown path: %q", f.Path)
-	default:
-		if ch := this.byChan.Get(f.Channel); ch != nil {
-			return ch.onData(c, f)
-		}
-		return ctx.NewErrorf(c, "unknown channel")
-	}
-}
-
-func (this *Conn) Send(c ctx.C, f Frame) error {
-	return this.ws.Write(c, enc.MustMarshal(c, f))
+func (this *Conn) Send(c ctx.C, obj any) error {
+	return this.ws.Write(c, enc.MustMarshal(c, obj))
 }

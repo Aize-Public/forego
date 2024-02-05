@@ -58,40 +58,37 @@ func (this *Counter) Foo(other int) {
 func TestReflect(t *testing.T) {
 	var _ Frame
 	c := test.Context(t)
-	h := Handler{}
+	h := RpcHandler{}
 	h.MustRegister(c, &Counter{MinAmt: 1})
 
 	send := make(chan chanMsg, 10)
 	recv := make(chan chanMsg, 10)
-	conn := Conn{
-		h: &h,
-		ws: &chanImpl{
-			Send: send,
-			Recv: recv,
-		},
-	}
+	conn := h.newRpcConn(&chanImpl{
+		Send: send,
+		Recv: recv,
+	})
 
-	test.NoError(t, conn.onData(c, Frame{
+	test.NoError(t, conn.onFrame(c, Frame{
 		Channel: "001",
 		Path:    "counter",
 		Type:    "open",
 		Data:    enc.Integer(4),
 	}))
-	test.NoError(t, conn.onData(c, Frame{
+	test.NoError(t, conn.onFrame(c, Frame{
 		Channel: "001",
 		Path:    "get",
 	}))
-	test.NoError(t, conn.onData(c, Frame{
+	test.NoError(t, conn.onFrame(c, Frame{
 		Channel: "001",
 		Path:    "inc",
 		Data:    enc.Integer(0),
 	}))
-	test.NoError(t, conn.onData(c, Frame{
+	test.NoError(t, conn.onFrame(c, Frame{
 		Channel: "001",
 		Path:    "inc",
 		Data:    enc.Integer(3),
 	}))
-	test.NoError(t, conn.onData(c, Frame{
+	test.NoError(t, conn.onFrame(c, Frame{
 		Channel: "001",
 		Path:    "get",
 	}))

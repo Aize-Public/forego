@@ -9,6 +9,8 @@ import (
 	"github.com/Aize-Public/forego/enc"
 )
 
+// used by wsrpc
+
 type builder struct {
 	name        string
 	structType  reflect.Type

@@ -1,6 +1,47 @@
 # WebSockets
 
-This library allows you to bind multiple objects to a WebSocket, exposing some of their methods.
+## `Handler`
+
+a generic server side websocket handler.
+
+It provides implementation for handling messages from the client and send messages back.
+
+```go
+	s := http.NewServer(c)
+	s.Handle("/ws", ws.Handler{
+		OnConnect: func(c ctx.C, conn *ws.Conn) (ctx.C, error) {
+      conn.Send(c, "Hello there!")
+			return c, nil
+		},
+		OnData: func(c ctx.C, conn *ws.Conn, n enc.Node) error {
+			log.Debugf(c, "got %v", n)
+			return nil
+		},
+	}.Server())
+```
+
+### `Server()`
+
+calling `.Server()` on a handler, will create an `http.Handler` which can be used on any http server.
+
+Internally it uses `golang.org/x/net/websocket` meaning it doesn't depends on any other libraries.
+
+you might need to modify the `.Handshake` function pointer, by default it accept from the same origin
+
+
+### `OnConnect`
+
+this optional method is called before the main loop, and allow to modify the `ctx.C`
+
+
+### `OnData`
+
+this method is called every time a message is received from the client
+
+
+## `RpcHandler`
+
+This handler allows to bind multiple objects to a WebSocket, exposing some of their methods.
 
 You could call it RPC over Websockets.
 
@@ -127,10 +168,5 @@ Alternatively you can use the provided test client:
 	})
 ```
 
-## `Handler{}.Server()`
+## `RpcHandler{}.Server()`
 
-calling `.Server()` on a handler, will create an `http.Handler` which can be used on any http server.
-
-Internally it uses `golang.org/x/net/websocket` which implements `http.Handler`
-
-you might need to modify the `.Handshake` function pointer, by default it accept from the same origin

@@ -44,7 +44,7 @@ func (this *Example) ByLength(c ws.C, len int) error {
 
 func TestExample(t *testing.T) {
 	c := test.Context(t)
-	h := ws.Handler{}
+	h := ws.RpcHandler{}
 	test.NoError(t, h.Register(c, &Example{}))
 	cli := h.NewTest(c)
 

@@ -19,7 +19,7 @@ func TestHttp(t *testing.T) {
 	test.NoError(t, err)
 	test.NotEqualsGo(t, 0, addr.Port)
 
-	h := &ws.Handler{}
+	h := &ws.RpcHandler{}
 	h.MustRegister(c, &Echo{})
 	s.Mux().Handle("/ws", h.Server())
 

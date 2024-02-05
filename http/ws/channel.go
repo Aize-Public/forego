@@ -10,7 +10,7 @@ import (
 )
 
 type Channel struct {
-	Conn   *Conn
+	Conn   *RpcConn
 	ID     string
 	byPath map[string]func(c C, n enc.Node) error
 }

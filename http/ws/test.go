@@ -10,7 +10,7 @@ import (
 )
 
 type TestClient struct {
-	conn *Conn
+	conn *RpcConn
 	ws   *testWS
 }
 
@@ -57,15 +57,12 @@ func (this *testWS) Write(c ctx.C, n enc.Node) error {
 }
 
 // create a local websocket loop and return a client connected to it
-func (this *Handler) NewTest(c ctx.C) *TestClient {
+func (this *RpcHandler) NewTest(c ctx.C) *TestClient {
 	ws := &testWS{
 		byChan: map[string]func(ctx.C, Frame) error{},
 		inbox:  make(chan Frame, 10),
 	}
-	conn := &Conn{
-		h:  this,
-		ws: ws,
-	}
+	conn := this.newRpcConn(ws)
 	go conn.Loop(c) // nolint
 
 	return &TestClient{
