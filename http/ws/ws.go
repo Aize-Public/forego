@@ -40,7 +40,7 @@ func (this *wsImpl) Write(c ctx.C, n enc.Node) error {
 	j := enc.JSON{}.Encode(c, n)
 	this.m.Lock()
 	defer this.m.Unlock()
-	log.Debugf(c, "ws.write: %s", j)
+	//log.Debugf(c, "ws.write: %s", j)
 	return this.write(c, j)
 }
 
