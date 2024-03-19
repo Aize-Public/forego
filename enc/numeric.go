@@ -13,6 +13,7 @@ import (
 
 type Numeric interface {
 	Int64() (int64, error)
+	Uint64() (uint64, error)
 	Float64() (float64, error)
 	String() string
 	Duration(unit time.Duration) Duration
@@ -29,9 +30,10 @@ var _ Node = Integer(0)
 var _ Numeric = Integer(0)
 
 func (this Integer) Int64() (int64, error)        { return int64(this), nil }
+func (this Integer) Uint64() (uint64, error)      { return uint64(this), nil }
 func (this Integer) Float64() (float64, error)    { return float64(this), nil }
 func (this Integer) String() string               { return strconv.FormatInt(int64(this), 10) }
-func (this Integer) GoString() string             { return fmt.Sprintf("enc.Int{%v}", int64(this)) }
+func (this Integer) GoString() string             { return fmt.Sprintf("enc.Integer{%v}", int64(this)) }
 func (this Integer) native() any                  { return int64(this) }
 func (this Integer) MarshalJSON() ([]byte, error) { return json.Marshal(int64(this)) }
 func (this Integer) unmarshalInto(c ctx.C, handler Handler, into reflect.Value) error {
@@ -47,6 +49,7 @@ var _ Node = Float(0)
 var _ Numeric = Float(0)
 
 func (this Float) Int64() (int64, error)        { return int64(this), nil }
+func (this Float) Uint64() (uint64, error)      { return uint64(this), nil }
 func (this Float) Float64() (float64, error)    { return float64(this), nil }
 func (this Float) String() string               { return strconv.FormatFloat(float64(this), 'g', -1, 64) }
 func (this Float) GoString() string             { return fmt.Sprintf("enc.Float{%v}", float64(this)) }
@@ -64,12 +67,24 @@ type Digits string
 var _ numeric = Digits("0")
 
 func (this Digits) Int64() (int64, error) {
-	i, err := strconv.ParseInt(string(this), 10, 64)
+	s := trimDecimal(string(this)) // be forgiving and let float unmarshal as int
+	i, err := strconv.ParseInt(s, 10, 64)
 	return i, err
+}
+func (this Digits) Uint64() (uint64, error) {
+	s := trimDecimal(string(this)) // be forgiving and let float unmarshal as int
+	i, err := strconv.ParseUint(s, 10, 64)
+	return i, err
+}
+func trimDecimal(s string) string {
+	if strings.Contains(string(s), ".") {
+		return strings.Split(s, ".")[0]
+	}
+	return s
 }
 func (this Digits) Float64() (float64, error) { return strconv.ParseFloat(string(this), 64) }
 func (this Digits) String() string            { return string(this) }
-func (this Digits) GoString() string          { return fmt.Sprintf("enc.Num{%q}", string(this)) }
+func (this Digits) GoString() string          { return fmt.Sprintf("enc.Digits{%q}", string(this)) }
 func (this Digits) MustFloat() Float {
 	f, err := strconv.ParseFloat(string(this), 64)
 	if err != nil {
@@ -131,7 +146,7 @@ func unmarshalNumericInto(this numeric, c ctx.C, handler Handler, into reflect.V
 		reflect.Uint16,
 		reflect.Uint32,
 		reflect.Uint64:
-		i, err := this.Int64() // TODO FIXME need Uint
+		i, err := this.Uint64()
 		if err != nil {
 			return err
 		}
@@ -139,6 +154,8 @@ func unmarshalNumericInto(this numeric, c ctx.C, handler Handler, into reflect.V
 	case reflect.Interface:
 		v := reflect.ValueOf(this.native())
 		into.Set(v)
+	case reflect.String:
+		into.SetString(this.String())
 	default:
 		return ctx.NewErrorf(c, "can't unmarshal %s %T into %v", handler.path, this, into.Type())
 	}
