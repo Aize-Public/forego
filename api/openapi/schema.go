@@ -13,6 +13,8 @@ import (
 	"github.com/Aize-Public/forego/enc"
 )
 
+const referencePrefix = "#/components/schemas/"
+
 type Schema struct {
 	Type            string             `json:"type,omitempty"`
 	Format          string             `json:"format,omitempty"`
@@ -153,30 +155,33 @@ func (this *Service) schemaFromType(c ctx.C, t reflect.Type, doc, example string
 
 	case reflect.Array, reflect.Slice:
 		elemSchema, err := this.schemaFromType(c, tt.Elem(), "", "")
-		format := t.String()
-		if elemSchema != nil && elemSchema.Format != "" {
-			format = "[]" + elemSchema.Format
+		if err != nil {
+			return nil, err
 		}
+		format := "[]" + this.formatFromSchema(elemSchema)
 		return &Schema{
 			Type:    "array",
 			Format:  format,
 			Items:   elemSchema,
 			Example: tryDecodingAsList(c, example),
-		}, err
+		}, nil
 
 	case reflect.Map:
-		elemSchema, err := this.schemaFromType(c, tt.Elem(), "", "")
-		format := t.String()
-		if elemSchema != nil && elemSchema.Format != "" {
-			format = strings.Split(format, "]")[0] + "]"
-			format += elemSchema.Format
+		keySchema, err := this.schemaFromType(c, tt.Key(), "", "")
+		if err != nil {
+			return nil, err
 		}
+		elemSchema, err := this.schemaFromType(c, tt.Elem(), "", "")
+		if err != nil {
+			return nil, err
+		}
+		format := fmt.Sprintf("map[%s]%s", this.formatFromSchema(keySchema), this.formatFromSchema(elemSchema))
 		return &Schema{
 			Type:            "object",
 			Format:          format,
 			AdditionalProps: elemSchema,
 			Example:         tryDecodingAsMap(c, example),
-		}, err
+		}, nil
 
 	case reflect.Interface:
 		format := ""
@@ -235,7 +240,7 @@ func (this *Service) schemaFromType(c ctx.C, t reflect.Type, doc, example string
 		// Create reference
 		structKey := tt.PkgPath() + "/" + tt.Name()
 		structKey = strings.ReplaceAll(structKey, "/", "_")
-		schema := &Schema{Reference: "#/components/schemas/" + structKey}
+		schema := &Schema{Reference: referencePrefix + structKey}
 
 		// Add definition if not exists (the same struct type should only be defined once)
 		if this.Components.Schemas == nil {
@@ -258,6 +263,21 @@ func (this *Service) schemaFromType(c ctx.C, t reflect.Type, doc, example string
 	default:
 		return &Schema{}, ctx.NewErrorf(c, "invalid kind: %v", tt.Kind())
 	}
+}
+
+func (this *Service) formatFromSchema(s *Schema) string {
+	if s == nil {
+		return ""
+	}
+	if s.Format != "" {
+		return s.Format
+	}
+	if len(s.AllOf) > 0 && s.AllOf[0].Reference != "" { // ref to struct
+		structKey := strings.TrimPrefix(s.AllOf[0].Reference, referencePrefix)
+		s = this.Components.Schemas[structKey]
+		return this.formatFromSchema(s)
+	}
+	return s.Type
 }
 
 func tryDecodingAsBool(c ctx.C, v string) any {
