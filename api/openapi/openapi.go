@@ -39,6 +39,7 @@ type Component struct {
 	Parameters     map[string]*Parameter      `json:"parameters,omitempty"`
 	Schemas        map[string]*Schema         `json:"schemas,omitempty"`
 }
+
 type SecurityScheme struct {
 	Type        string `json:"type"` // apiKey, http, mutualTLS, oauth2, openIdConnect
 	Description string `json:"description"`
