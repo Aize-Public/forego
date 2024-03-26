@@ -68,6 +68,9 @@ func (c tagC) Value(k any) any {
 		}
 		return k(c.key, c.json)
 	default:
+		if k == c.key {
+			return c.json
+		}
 		//log.Printf("tagC.Value(%T)...", k)
 		return c.C.Value(k)
 	}
